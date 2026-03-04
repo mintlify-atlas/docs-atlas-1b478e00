@@ -1,0 +1,316 @@
+---
+title: Building from Source
+description: Compile IronOS firmware for your device
+---
+
+IronOS can be built using command line tools or an IDE. This guide covers building from the command line, which is the most flexible and well-supported method.
+
+## Prerequisites
+
+### Windows (MSYS2)
+
+1. Download and install [MSYS2](https://msys2.org) following the official instructions
+
+2. Install required packages (use **mingw64.exe** terminal):
+
+```bash
+pacman -S mingw-w64-x86_64-arm-none-eabi-gcc mingw-w64-x86_64-libwinpthread-git python3 python3-pip make unzip git
+```
+
+3. Download RISC-V toolchain for Pinecil devices:
+
+Download `xpack-riscv-none-elf-gcc-...-win32-x64.zip` from the [xpack releases](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases)
+
+4. Extract the toolchain and add to PATH:
+
+```bash
+cd /
+unzip xpack-riscv-none-elf-gcc-...-win32-x64.zip
+cd ~
+echo 'export PATH=/xpack-riscv-none-elf-gcc-.../bin:${PATH}' >> ~/.bashrc
+source ~/.bashrc
+```
+
+5. (Optional) Install flashing tools:
+
+```bash
+pacman -S mingw-w64-x86_64-openocd
+pacman -S mingw-w64-x86_64-stlink
+```
+
+6. Clone the repository:
+
+```bash
+git clone --recursive https://github.com/Ralim/IronOS.git
+cd IronOS
+```
+
+### macOS
+
+1. Install the ARM toolchain by [following steps 1-3 here](https://github.com/glegrain/STM32-with-macOS#0---installing-the-toolchain)
+
+2. Install Python:
+
+```bash
+brew install python
+```
+
+3. (Optional) Update pip:
+
+```bash
+python3 -m pip install --upgrade pip
+```
+
+4. Change to the source directory:
+
+```bash
+cd source
+```
+
+5. Create and activate a Python virtual environment:
+
+```bash
+python3 -m venv ironos-venv
+source ironos-venv/bin/activate
+```
+
+6. Install Python dependencies:
+
+```bash
+pip install bdflib
+```
+
+### Linux
+
+Install required packages using your distribution's package manager:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install gcc-arm-none-eabi python3 python3-pip make git
+
+# Arch Linux
+sudo pacman -S arm-none-eabi-gcc python python-pip make git
+```
+
+For RISC-V support, install the RISC-V toolchain or use Docker.
+
+## Building Firmware
+
+All build commands should be run from the `source/` directory.
+
+### Single Language Builds
+
+To build firmware for a specific device and language:
+
+```bash
+make -j8 model=MODEL_NAME firmware-LANG_CODE
+```
+
+**Supported Models:**
+- `TS100`, `TS80`, `TS80P`, `TS101` - Miniware devices
+- `Pinecil` - Pine64 Pinecil V1
+- `Pinecilv2` - Pine64 Pinecil V2
+- `MHP30` - Miniware MHP30 hot plate
+- `S60`, `S60P`, `T55` - Sequre devices
+
+**Language Codes:**
+- `EN` (English), `DE` (German), `ES` (Spanish), `FR` (French)
+- `ZH_CN` (Simplified Chinese), `ZH_TW` (Traditional Chinese)
+- `JA_JP` (Japanese), `RU` (Russian), `PL` (Polish)
+- And many more - see `Translations/` directory for full list
+
+#### Examples
+
+Build English firmware for TS80P with 8 parallel jobs:
+
+```bash
+make -j8 model=TS80P firmware-EN
+```
+
+Build Simplified Chinese firmware for Pinecil:
+
+```bash
+make -j$(nproc) model=Pinecil firmware-ZH_CN
+```
+
+### Multi-Language Builds
+
+Multi-language firmware includes multiple translations in a single binary. This is supported on devices with sufficient flash space.
+
+#### Pre-defined Language Groups
+
+Build European languages for Pinecil:
+
+```bash
+make -j$(nproc) model=Pinecil firmware-multi_European
+```
+
+Build Cyrillic compressed multi-language:
+
+```bash
+make -j$(sysctl -n hw.logicalcpu) model=Pinecil firmware-multi_compressed_Belarusian+Bulgarian+Russian+Serbian+Ukrainian
+```
+
+Build Chinese and Japanese languages:
+
+```bash
+make -j8 model=Pinecilv2 firmware-multi_Chinese+Japanese
+```
+
+#### Custom Language Groups
+
+Build custom multi-language firmware with specific languages:
+
+```bash
+# English and Simplified Chinese for TS80
+make -j8 model=TS80 custom_multi_langs="EN ZH_CN" firmware-multi_Custom
+
+# German, Spanish, and French (compressed) for TS100
+make -j8 model=TS100 custom_multi_langs="DE ES FR" firmware-multi_compressed_Custom
+```
+
+### Build Outputs
+
+Compiled firmware is placed in `Hexfile/` directory:
+
+- `.hex` - Intel HEX format
+- `.bin` - Raw binary format  
+- `.dfu` - DFU (Device Firmware Update) format
+
+Example output files:
+```
+Hexfile/
+├── Pinecilv2_EN.hex
+├── Pinecilv2_EN.bin
+├── Pinecilv2_EN.dfu
+└── ...
+```
+
+## Building All Firmware
+
+To build all language variants for all supported models:
+
+```bash
+cd source
+bash ./build.sh
+```
+
+For macOS, modify the script to use `sysctl` instead of `nproc`:
+
+```bash
+# Replace in build.sh:
+make -j$(nproc)
+# With:
+make -j$(sysctl -n hw.logicalcpu)
+```
+
+## Docker Build Environment
+
+Docker provides a consistent build environment across all platforms.
+
+### Build All Firmware with Docker
+
+```bash
+# From repository root
+make docker-build
+```
+
+Output will be in `BUILDS/` directory.
+
+### Interactive Docker Shell
+
+Start a shell with all build tools configured:
+
+```bash
+make docker-shell
+```
+
+Inside the container, use normal build commands:
+
+```bash
+cd source
+make -j8 model=Pinecilv2 firmware-EN
+```
+
+### Pinecil V2 Specific (Docker Recommended)
+
+For Pinecil V2, Docker is highly recommended due to the BL702 SDK requirements:
+
+```bash
+# Start Docker environment
+./scripts/deploy.sh
+
+# Build Pinecil V2 firmware
+cd source/
+./build.sh -l EN -m Pinecilv2
+```
+
+Firmware artifacts will be in `source/Hexfile/`.
+
+## Cleaning Build Artifacts
+
+```bash
+# Clean build objects
+make clean
+
+# Clean everything including generated files
+make clean-all
+
+# From repository root, also clean Docker cache
+make clean-full
+```
+
+## Troubleshooting
+
+### "Command not found" Errors
+
+Ensure the appropriate toolchain is in your PATH:
+- ARM devices need `arm-none-eabi-gcc`
+- RISC-V devices need `riscv-none-elf-gcc`
+
+```bash
+# Check toolchain availability
+arm-none-eabi-gcc --version
+riscv-none-elf-gcc --version
+```
+
+### Python Module Errors
+
+Install required Python packages:
+
+```bash
+pip install bdflib
+```
+
+### Out of Memory During Compilation
+
+Reduce parallel jobs:
+
+```bash
+# Instead of -j8, use fewer jobs
+make -j2 model=Pinecil firmware-EN
+```
+
+### Flash Size Errors
+
+If firmware doesn't fit in flash:
+- Use compressed multi-language builds
+- Build single-language firmware
+- Disable optional features in BSP configuration
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Flashing Firmware" icon="download" href="/flashing">
+    Learn how to flash compiled firmware
+  </Card>
+  <Card title="Translation Guide" icon="language" href="/development/translations">
+    Contribute translations
+  </Card>
+  <Card title="Development Overview" icon="code" href="/development/overview">
+    Back to development overview
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand firmware architecture
+  </Card>
+</CardGroup>

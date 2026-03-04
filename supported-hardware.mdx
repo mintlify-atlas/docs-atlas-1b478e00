@@ -1,0 +1,362 @@
+---
+title: Supported Hardware
+description: Complete list of devices compatible with IronOS firmware including feature comparisons and purchase recommendations
+---
+
+# Supported Hardware
+
+IronOS supports a variety of soldering irons and hot plates from different manufacturers. Currently **10 devices** are fully supported with varying feature sets.
+
+## Hardware Comparison
+
+| Device | DC | QC | PD | EPR | BLE | Tip Sense | Recommended Purchase | Notes |
+|:------:|:--:|:--:|:--:|:---:|:---:|:---------:|:-------------------:|:-----|
+| Miniware MHP30 | ❌ | ❌ | ✔️ | ❌ | ❌ | ✔️ | ✔️ | |
+| Pinecil V1 | ✔️ | ✔️ | ✔️ | ❌ | ❌ | ❌ | ❌ * | |
+| Pinecil V2 | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | |
+| Miniware TS101 | ✔️ | ❌ | ✔️ | ✔️ | ❌ | ✔️ | ✔️ ***** | Full OLED resolution not yet supported |
+| Sequre S60 | ❌ | ❌ | ✔️ | ❌ | ❌ | ❌ | ✔️ | Full OLED resolution not yet supported |
+| Sequre S60P | ❌ | ❌ | ✔️ | ❌ | ❌ | ❌ | ✔️ | Full OLED resolution not yet supported |
+| Sequre T55 | ❌ | ❌ | ✔️ | ❌ | ❌ | N/A | ✔️ | Full OLED resolution not yet supported |
+| Miniware TS80P | ❌ | ✔️ | ✔️ | ❌ | ❌ | N/A | ✔️ | |
+| Miniware TS100 | ✔️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ ** | |
+| Miniware TS80 | ❌ | ✔️ | ❌ | ❌ | ❌ | N/A | ❌ *** | |
+
+### Legend
+
+- **DC**: Direct current power support
+- **QC**: Quick Charge (QC 2.0/3.0) support
+- **PD**: USB Power Delivery support
+- **EPR**: Extended Power Range (28V) support
+- **BLE**: Bluetooth Low Energy for remote control
+- **Tip Sense**: Ability to detect different tip types
+- **N/A**: Feature not applicable to this device
+
+### Important Notes
+
+<Warning>
+**\* Pinecil V1**: No longer recommended. The V1 stopped being manufactured long ago. Models for sale online are generally clones or old stock being sold for more than Pine64 sells the V2.
+</Warning>
+
+<Warning>
+**\*\* TS100**: No longer recommended. Miniware started shipping TS100s using cloned STM32 chips. While these work with IronOS, their DFU bootloader works terribly, making it hard to flash larger firmware images without timing out.
+</Warning>
+
+<Warning>
+**\*\*\* TS80**: No longer recommended. Replaced by the TS80P. Production ramped down long ago and only existing stock remains. The TS80P is far superior.
+</Warning>
+
+<Note>
+**\*\*\*\* EPR/PPS with 28V support** is disabled by default due to [safety concerns](https://github.com/Ralim/IronOS/pull/2073). To enable it, set the "PD Mode" option in the Power settings submenu to "Safe" or "Default".
+</Note>
+
+<Warning>
+**\*\*\*\*\* TS101 Screen Compatibility**: Some newer TS101 revisions use a different OLED screen model that is not yet supported by IronOS. See [this bug report](https://github.com/Ralim/IronOS/issues/2063) for more information.
+</Warning>
+
+### Display Features
+
+The TS101, S60, S60P irons and MHP30, T55 plates feature a higher resolution OLED than other devices. Work is ongoing to support this fully - for now a cropped view is usable.
+
+### Tip Sense Explained
+
+**Tip Sense** refers to the device's ability to distinguish between different tip types:
+
+- Regular TS100 or Hakko T12 style tips
+- Pine64's custom shorter tips (lower resistance, allow for more power)
+
+This feature is N/A for TS80/TS80P as there is only one model of tip for them.
+
+## Download Firmware
+
+The current stable release is **v2.23**. Development builds from the `dev` branch are also available.
+
+| Device | Stable Release | Development Build |
+|:-------|:--------------:|:-----------------:|
+| Pinecil V1 | [Pinecil.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/Pinecil.zip) | [Pinecil.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/Pinecil.zip) |
+| Pinecil V1 (multilang) | [Pinecil_multi-lang.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/Pinecil_multi-lang.zip) | [Pinecil_multi-lang.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/Pinecil_multi-lang.zip) |
+| Pinecil V2 | [PinecilV2.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/PinecilV2.zip) | [PinecilV2.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/Pinecilv2.zip) |
+| Pinecil V2 (multilang) | [PinecilV2_multi-lang.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/PinecilV2_multi-lang.zip) | [PinecilV2_multi-lang.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/Pinecilv2_multi-lang.zip) |
+| Miniware TS100 | [TS100.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/TS100.zip) | [TS100.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/TS100.zip) |
+| Miniware TS101 | [TS101.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/TS101.zip) | [TS101.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/TS101.zip) |
+| Miniware TS80 | [TS80.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/TS80.zip) | [TS80.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/TS80.zip) |
+| Miniware TS80P | [TS80P.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/TS80P.zip) | [TS80P.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/TS80P.zip) |
+| Miniware MHP30 | [MHP30.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/MHP30.zip) | [MHP30.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/MHP30.zip) |
+| Sequre S60 | [S60.zip](https://github.com/Ralim/IronOS/releases/download/v2.23/S60.zip) | [S60.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/S60.zip) |
+| Sequre S60P | Not Released | [S60P.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/S60P.zip) |
+| Sequre T55 | Not Released | [T55.zip](https://nightly.link/Ralim/IronOS/workflows/push/dev/T55.zip) |
+
+## Device Details
+
+### Miniware TS100
+
+<Card title="TS100" icon="screwdriver-wrench">
+  The original device that started the IronOS project. Still fully supported but no longer recommended for new purchases.
+</Card>
+
+**Specifications:**
+- Power: 9-25V DC (voltages below 12V don't work well for substantial mass)
+- Power range determined by input voltage
+- Uses standard soldering iron tips
+- No USB-PD support
+
+**Notes:**
+- First supported soldering iron in the IronOS project
+- Generally very capable device
+- Other devices now have all its features and more at similar or lower prices
+- Nothing will be taken away from existing TS100 support
+- [Original firmware available here](https://e-design.com.cn/en/NewsDetail/4203645.html)
+
+### Miniware TS101
+
+<Card title="TS101" icon="screwdriver-wrench">
+  Direct replacement for TS100 with USB-C PD and easier tip swapping via spring mechanism.
+</Card>
+
+**Specifications:**
+- Power: DC, USB-PD (including 28V EPR support)
+- Same tip compatibility as TS100
+- Spring pressure tip holding mechanism (easier to swap, less secure)
+- USB-C connector
+
+**Notes:**
+- Uses STM32 clone MCU with quirks (screen performance not optimal but usable)
+- Bootloader for programming can be challenging
+- Miniware bootup logo burned into bootloader (cannot be removed)
+- IronOS can show custom logo after the Miniware logo
+- Higher resolution OLED (full resolution support in progress)
+- Quirks when loading custom logos - read documentation carefully
+
+### Miniware TS80
+
+<Card title="TS80" icon="screwdriver-wrench">
+  Successor to TS100 with custom smaller tips. Optimized for Quick Charge power banks.
+</Card>
+
+**Specifications:**
+- Power: Quick Charge 3.0 (9V/2A, 18W max)
+- Custom smaller tips (better performance at lower wattages)
+- Does NOT support USB-PD
+- Will not work with USB-C power supplies in most cases
+
+**Notes:**
+- Designed for QC3 capable chargers only
+- Not designed for PD on hardware level
+- Replaced by TS80P
+- [Original firmware available here](https://e-design.com.cn/en/NewsDetail/4203645.html)
+
+### Miniware TS80P
+
+<Card title="TS80P" icon="screwdriver-wrench">
+  Direct successor to TS80. Essentially what the TS80 should have been from the start.
+</Card>
+
+**Specifications:**
+- Power: Quick Charge 3.0 (9V/2A, 12V/1.5A, 18W max)
+- Power: USB Power Delivery (9V/3A, 12V/3A, 30W max)
+- Same custom tips as TS80
+- Faster tip removal method
+
+**Notes:**
+- Nearly identical to TS80 except with USB-PD support
+- Far better compatibility with modern power banks
+- Use valid PD device supporting 12V/3A for full 30W potential
+- Falls back to 9V/18W power mode with lower-spec supplies
+- [Original firmware available here](https://e-design.com.cn/en/NewsDetail/4203645.html)
+
+### Miniware MHP30
+
+<Card title="MHP30" icon="heat">
+  Mini Hot Plate for reflow soldering with profile mode support.
+</Card>
+
+**Specifications:**
+- Power: USB-PD
+- Profile mode support for reflow soldering
+- Contains buck DC/DC converter (better power supply utilization)
+
+**Hardware Details:**
+- Accelerometer: MSA301 (mounted in middle of unit)
+- USB-PD: FUSB302
+- Hardware I2C bus on PB6/7 for MSA301 and FUSB302
+- OLED: SSD1306 on bit-banged bus
+- Higher resolution OLED (full resolution support in progress)
+- [Original firmware available here](https://e-design.com.cn/en/NewsDetail/4203645.html)
+
+### Pine64 Pinecil V1
+
+<Card title="Pinecil V1" icon="microchip">
+  First model soldering iron from Pine64. Schematics available. No longer manufactured.
+</Card>
+
+**Specifications:**
+- Power: DC, Quick Charge, USB-PD
+- Battery protection support
+- Open hardware with available schematics
+
+**Notes:**
+- Stopped being manufactured long ago
+- Current online offerings are generally clones or old stock
+- Often sold for more than Pine64 sells the V2
+- [Default firmware available here](https://files.pine64.org/os/Pinecil/Pinecil_firmware_20201115.zip)
+
+### Pine64 Pinecil V2
+
+<Card title="Pinecil V2" icon="microchip">
+  Most feature-complete device with BLE, EPR support, and community backing.
+</Card>
+
+**Specifications:**
+- Power: DC, Quick Charge, USB-PD, EPR (28V)
+- Bluetooth Low Energy for remote control
+- Tip sense capability
+- Battery protection support
+- Hall effect sensor support (optional)
+
+**Notes:**
+- Only vendor providing schematics and financial support to the project
+- Direct contact to engineering teams for hardware issues
+- Best support due to hardware designed with IronOS in mind
+- BLE turned off by default in 2.23+ due to security concerns (can be enabled in settings)
+- Compatible with PineSAM and PineTool for BLE control
+
+**Hall Effect Sensor:**
+- Unpopulated footprint (U14) for Si7210-B-00-IV
+- Place neodymium magnet on holder stand
+- Triggers automatic sleep when placed in stand
+- 10 sensitivity settings (0=off, 1=lowest, 9=highest)
+
+### Sequre S60
+
+<Card title="Sequre S60" icon="bolt">
+  USB-PD powered iron with vendor-provided schematics.
+</Card>
+
+**Specifications:**
+- Power: USB-PD
+- Higher resolution OLED
+
+**Notes:**
+- Sequre has been supportive by providing schematics
+- Full OLED resolution support in progress (cropped view currently usable)
+
+### Sequre S60P
+
+<Card title="Sequre S60P" icon="bolt">
+  Updated version of S60 with improved features.
+</Card>
+
+**Specifications:**
+- Power: USB-PD
+- Higher resolution OLED
+
+**Notes:**
+- Development builds available
+- Stable release coming soon
+- Full OLED resolution support in progress
+
+### Sequre T55
+
+<Card title="Sequre T55" icon="heat">
+  Hot plate device with USB-PD support.
+</Card>
+
+**Specifications:**
+- Power: USB-PD
+- Higher resolution OLED
+- Hot plate form factor
+
+**Notes:**
+- Development builds available
+- Stable release coming soon
+- Full OLED resolution support in progress
+
+## Power Supply Considerations
+
+<Warning>
+**For all devices EXCEPT MHP30**: These soldering irons do NOT contain DC/DC converters.
+</Warning>
+
+### Important Power Notes
+
+<Accordion title="Voltage and Power Relationship">
+  Your power at the tip is a function of the supplied voltage. While irons support wide voltage ranges, **always use a voltage near the upper limit where possible** for best performance.
+</Accordion>
+
+<Accordion title="USB-PD Recommendation">
+  It is highly recommended to use a PD adapter where possible. This allows the iron to know the limitations of your supply and negotiate appropriately.
+</Accordion>
+
+<Accordion title="Power Control Limitations">
+  Marked irons can only turn the tip on and off in software - they cannot control maximum power drawn from the supply. When using PD, the iron may select a lower voltage than your power supply's maximum to prevent overcurrent failures.
+</Accordion>
+
+<Accordion title="MHP30 Exception">
+  The MHP30 contains a buck DC/DC converter, which means it can utilize most power supplies fairly well. However, you should still aim for the highest reasonable voltage.
+</Accordion>
+
+For more information about power management, see the [power documentation](https://ralim.github.io/IronOS/Power/).
+
+## Vendor Support & Open Hardware
+
+### Miniware
+
+Miniware no longer provides source code, schematics, or support for any open source firmware on their devices. Only TS100, TS80, and TS80P are "open" to any extent. The TS80P was never truly open but is very similar to the TS80.
+
+<Note>
+This generally doesn't affect device performance, but it can mean slower support for newer products or difficulty resolving certain issues.
+</Note>
+
+### Sequre
+
+Sequre has been supportive of the S60 by providing schematics to the community.
+
+### Pine64
+
+Pine64 units (Pinecil) are fully open with schematics available on the Pine64 Wiki. They are currently:
+
+- The only vendor providing financial support to the IronOS project
+- The only vendor allowing direct contact with engineering teams
+- Designing hardware with IronOS in mind (Ralim consults with their engineering team)
+
+This results in generally better support for these devices, though features are designed to work across all devices where possible.
+
+## Purchase Recommendations
+
+<Note>
+**Recommended Purchase** refers only to buying a **new** device. All listed devices are supported and will work excellently for years to come.
+</Note>
+
+### Best Overall Choice
+
+<CardGroup cols={2}>
+  <Card title="Pinecil V2" icon="star">
+    Most feature-complete device with BLE, EPR, tip sense, and the best community/vendor support.
+  </Card>
+  <Card title="Miniware TS80P" icon="check">
+    Excellent portable option with USB-PD support and compact form factor.
+  </Card>
+</CardGroup>
+
+### Specialized Use Cases
+
+<CardGroup cols={2}>
+  <Card title="MHP30" icon="heat">
+    Best for reflow soldering with profile mode support.
+  </Card>
+  <Card title="Sequre S60/S60P" icon="bolt">
+    Good alternative with vendor support and higher resolution display.
+  </Card>
+</CardGroup>
+
+### Devices to Avoid When Buying New
+
+- **Pinecil V1**: Replaced by V2, often overpriced
+- **TS100**: Cloned STM32 chips cause flashing issues
+- **TS80**: Replaced by TS80P with better features
+
+## Next Steps
+
+<Card title="Getting Started" icon="rocket" href="/getting-started">
+  Ready to install IronOS? Check out the Getting Started guide for installation instructions.
+</Card>

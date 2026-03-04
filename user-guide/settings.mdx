@@ -1,0 +1,458 @@
+---
+title: Settings Reference
+description: Complete reference for all IronOS settings and configuration options
+---
+
+This page documents all available settings in IronOS. Not all settings are visible on all devices.
+
+<Note>
+Pause on any setting for 3 seconds to see on-device help text that explains the setting.
+</Note>
+
+## Power Settings
+
+Menu for settings related to power and input voltage.
+
+### Power Source
+
+Adjusts the low voltage threshold for battery protection when powered by a battery.
+
+**Options**: DC (10V), S (3.3V per cell), Disable PWR limit
+
+**Help text**: "Set cutoff voltage to prevent battery overdischarge (DC=10V) (S=3.3V per cell, disable PWR limit)"
+
+### Minimum Voltage
+
+Sets minimum voltage per battery cell before shutdown. This value is multiplied by the cell count.
+
+**Range**: 
+- 3S: 3.0 - 3.7V
+- 4-6S: 2.4 - 3.7V
+
+**Help text**: "Minimum allowed voltage per battery cell (3S: 3 - 3.7V | 4-6S: 2.4 - 3.7V)"
+
+### QC Voltage
+
+Maximum voltage for Quick Charge negotiation. Does not affect USB-PD.
+
+**Help text**: "Max QC voltage the iron should negotiate for"
+
+<Warning>
+Set this based on the current rating of your power supply.
+</Warning>
+
+### PD Timeout
+
+Duration before firmware stops trying USB-PD and switches to QC negotiation.
+
+**Units**: 100ms steps
+
+**Help text**: "PD negotiation timeout in 100ms steps for compatibility with some QC chargers"
+
+<Tip>
+Keep values small. Longer times may help with old/dodgy PD adapters.
+</Tip>
+
+### PD Mode
+
+Controls how USB-PD logic selects voltage.
+
+**Options**:
+- **No Dynamic**: Disables EPR & PPS protocols
+- **Safe mode**: Does not use padding resistance (selects slightly lower voltage)
+- **Default**: Full PD feature support
+
+**Help text**: "No Dynamic disables EPR & PPS, Safe mode does not use padding resistance"
+
+<Note>
+EPR/PPS with 28V support is disabled by default for safety. Set to Safe or Default to enable.
+</Note>
+
+### Power Limit
+
+Sets custom wattage for average power consumption. Device aims to keep average power below this value.
+
+**Units**: Watts (W)
+
+**Help text**: "Average maximum power the iron can use (W=watt)"
+
+<Note>
+- MHP30 regulates power smoothly to this limit
+- Other devices cannot control peak power
+- With USB-PD, limit is set to lower of this setting and supply's advertised wattage
+</Note>
+
+---
+
+## Soldering Settings
+
+Settings for soldering mode operation.
+
+### Boost Temp
+
+Temperature used in boost mode. This SETS the temperature, not adds to it.
+
+**Help text**: "Tip temperature used in 'boost mode'"
+
+### Start-up Behavior
+
+Defines what happens when device powers on.
+
+**Options**:
+- **S**: Heat to soldering temp immediately
+- **Z**: Standby at sleep temp until moved
+- **R**: Standby without heating until moved
+
+**Help text**: "S=heat to soldering temp | Z=standby at sleep temp until moved | R=standby without heating until moved"
+
+### Temp Change Short
+
+Temperature increment for short button press.
+
+**Help text**: "Temperature-change-increment on short button press"
+
+### Temp Change Long
+
+Temperature increment for long button press.
+
+**Help text**: "Temperature-change-increment on long button press"
+
+### Allow Locking Buttons
+
+Enables button locking to prevent accidental presses.
+
+**Options**:
+- **B**: Boost mode only
+- **F**: Full locking
+
+**Help text**: "While soldering, hold down both buttons to toggle locking them (B=boost mode only | F=full locking)"
+
+<Tip>
+While soldering, hold both buttons to toggle the lock on/off.
+</Tip>
+
+### Profile Mode Settings (MHP30 Only)
+
+The following settings configure multi-phase heating profiles for the MHP30 hot plate.
+
+#### Profile Phases
+
+Number of phases in profile mode.
+
+**Help text**: "Number of phases in profile mode"
+
+#### Preheat Temp
+
+Preheat temperature at start of profile mode.
+
+**Help text**: "Preheat to this temperature at the start of profile mode"
+
+#### Preheat Speed
+
+Heating rate during preheat phase.
+
+**Units**: Degrees per second
+
+**Help text**: "Preheat at this rate (degrees per second)"
+
+#### Phase 1-5 Temp
+
+Target temperature for end of each phase.
+
+**Help text**: "Target temperature for the end of this phase"
+
+#### Phase 1-5 Duration
+
+Duration of each phase.
+
+**Units**: Seconds
+
+**Help text**: "Target duration of this phase (seconds)"
+
+<Note>
+Phases may take longer if reaching target temperature takes longer than the set duration.
+</Note>
+
+#### Cooldown Speed
+
+Cooling rate at end of profile mode.
+
+**Units**: Degrees per second
+
+**Help text**: "Cooldown at this rate at the end of profile mode (degrees per second)"
+
+---
+
+## Sleep Mode
+
+Power-saving and automatic shutdown settings.
+
+### Motion Sensitivity
+
+How sensitive the device is to movement.
+
+**Range**: 0-9
+- **0**: Motion detection disabled
+- **1**: Least sensitive
+- **9**: Most sensitive
+
+**Help text**: "1=least sensitive | ... | 9=most sensitive"
+
+### Sleep Temp
+
+Tip temperature while in sleep mode.
+
+**Help text**: "Tip temperature while in 'sleep mode'"
+
+<Tip>
+Typically set around halfway between off and soldering temperature.
+</Tip>
+
+### Sleep Timeout
+
+Time without movement/button press before entering sleep mode.
+
+**Units**: s (seconds) or m (minutes)
+
+**Help text**: "Interval before 'sleep mode' starts (s=seconds | m=minutes)"
+
+### Shutdown Timeout
+
+Time without movement/button press before complete shutdown.
+
+**Units**: m (minutes)
+
+**Help text**: "Interval before the iron shuts down (m=minutes)"
+
+### Hall Sensor Sensitivity (Pinecil)
+
+Sensitivity for detecting magnets to trigger sleep mode.
+
+**Range**: 0-9
+- **0**: Disabled
+- **1**: Least sensitive
+- **9**: Most sensitive
+
+**Help text**: "Sensitivity to magnets (1=least sensitive | ... | 9=most sensitive)"
+
+### HallSensor SleepTime (Pinecil)
+
+Delay before sleep when hall sensor detects magnetic field.
+
+**Help text**: "Interval before 'sleep mode' starts when hall effect is above threshold"
+
+---
+
+## User Interface
+
+Display and interaction preferences.
+
+### Temperature Unit
+
+Display temperature in Celsius or Fahrenheit.
+
+**Options**: C (°Celsius) or F (°Fahrenheit)
+
+**Help text**: "C=°Celsius | F=°Fahrenheit"
+
+### Display Orientation
+
+Screen rotation setting.
+
+**Options**:
+- **R**: Right-handed
+- **L**: Left-handed
+- **A**: Automatic (based on accelerometer)
+
+**Help text**: "R=right-handed | L=left-handed | A=automatic"
+
+### Cooldown Flashing
+
+Blink temperature on idle screen while tip is hot (>50°C).
+
+**Help text**: "Flash temp reading at idle while tip is hot"
+
+### Scrolling Speed
+
+Speed of description text scrolling in menus.
+
+**Options**: S (slow) or F (fast)
+
+**Help text**: "Scrolling speed of info text (S=slow | F=fast)"
+
+<Note>
+Faster speeds may cause tearing but allow reading descriptions quicker.
+</Note>
+
+### Swap +/- Keys
+
+Reverses which button increases/decreases temperature.
+
+**Help text**: "Reverse assignment of buttons for temperature adjustment"
+
+### Swap A/B Keys
+
+Reverses button functions in settings menu.
+
+**Help text**: "Reverse assignment of buttons for Settings menu"
+
+### Anim. Speed
+
+Speed of menu icon animations.
+
+**Options**: Off, S (slow), M (medium), F (fast)
+
+**Help text**: "Pace of icon animations in menu (S=slow | M=medium | F=fast)"
+
+### Anim. Loop
+
+Whether menu animations should loop.
+
+**Help text**: "Loop icon animations in main menu"
+
+<Note>
+Only visible if animation speed is not set to Off.
+</Note>
+
+### Screen Brightness
+
+OLED display brightness level.
+
+**Help text**: "Adjust the OLED screen brightness"
+
+<Warning>
+Higher values age the OLED faster due to burn-in. Most screens die from other causes first.
+</Warning>
+
+### Invert Screen
+
+Inverts all OLED colors (black becomes white, white becomes black).
+
+**Help text**: "Invert the OLED screen colors"
+
+### Boot Logo Duration
+
+How long to display boot logo at startup.
+
+**Units**: s (seconds)
+
+**Help text**: "Set boot logo duration (s=seconds)"
+
+### Detailed Idle Screen
+
+Shows advanced text-based view on idle screen with more information.
+
+**Help text**: "Display detailed info in a smaller font on idle screen"
+
+### Detailed Solder Screen
+
+Shows advanced text-based view during soldering with more information.
+
+**Help text**: "Display detailed info in a smaller font on soldering screen"
+
+### Bluetooth (Pinecil V2)
+
+Enables Bluetooth Low Energy at boot time.
+
+**Help text**: "Enables BLE"
+
+<Warning>
+Bluetooth is disabled by default for security reasons. Enable only if you need remote control functionality.
+</Warning>
+
+---
+
+## Advanced Settings
+
+Advanced configuration, calibration, and miscellaneous options.
+
+### Calibrate CJC at Next Boot
+
+Schedules Cold Junction Compensation calibration for next boot.
+
+**Help text**: "Calibrate Cold Junction Compensation at next boot (not required if Delta T is < 5°C)"
+
+<Warning>
+Only calibrate if delta between target and measured temperature exceeds 5°C.
+</Warning>
+
+**Requirements for calibration**:
+- Tip must be installed
+- Temperature difference between tip and handle must be less than 10°C (room temperature)
+- Device must be at ambient temperature
+
+**Calibration process**:
+1. Enable this setting
+2. Exit settings menu
+3. Unplug device
+4. Wait until device reaches room temperature
+5. Power on (calibration runs automatically)
+6. Setting unchecks automatically after successful calibration
+
+See [Menu System - Calibrating Tip CJC](/user-guide/menu#calibrating-tip-cjc) for detailed instructions.
+
+### Calibrate Input Voltage
+
+Enter adjustment mode to compensate for voltage sense resistor variance.
+
+**Help text**: "Start VIN calibration (long press to exit)"
+
+See [Menu System - Calibrating Input Voltage](/user-guide/menu#calibrating-input-voltage) for detailed instructions.
+
+### Power Pulse
+
+Wattage of keep-awake pulse to prevent power banks from sleeping.
+
+**Units**: W (watts)
+
+**Help text**: "Intensity of power of keep-awake-pulse (W=watt)"
+
+### Power Pulse Delay
+
+Time interval between power pulses.
+
+**Units**: × 2.5 seconds
+
+**Help text**: "Delay before keep-awake-pulse is triggered (x 2.5s)"
+
+<Tip>
+Longer gaps reduce unwanted tip heating but must be fast enough to keep power bank awake.
+</Tip>
+
+### Power Pulse Duration
+
+How long each power pulse lasts.
+
+**Units**: × 250ms
+
+**Help text**: "Keep-awake-pulse duration (x 250ms)"
+
+<Note>
+Some power banks need sustained power draw. Keep as short as possible to avoid wasting power.
+</Note>
+
+### Restore Default Settings
+
+Resets all settings and calibrations to factory defaults.
+
+**Help text**: "Reset all settings to default"
+
+<Warning>
+This does NOT erase custom boot logos.
+</Warning>
+
+### Language
+
+Changes device language (multi-lingual builds only).
+
+**Available**: 31 languages supported
+
+### Soldering Tip Type
+
+Manually select the type of tip fitted.
+
+**Help text**: "Select the tip type fitted"
+
+<Note>
+Devices with tip sensing (Pinecil V2, TS101, MHP30) auto-detect tip type at boot.
+</Note>

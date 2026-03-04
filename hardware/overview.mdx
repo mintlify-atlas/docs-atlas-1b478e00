@@ -1,0 +1,114 @@
+---
+title: Hardware Overview
+description: Supported soldering irons and their capabilities
+---
+
+IronOS supports a variety of soldering irons from different manufacturers. Each device has unique characteristics and capabilities that affect its performance and compatibility.
+
+## Supported Devices
+
+### TS100
+
+The TS100 was the first supported soldering iron and remains fully supported.
+
+- **Voltage Range**: 9-25V DC
+- **Power**: Determined by input voltage
+- **Performance**: Voltages below 12V don't work well for substantial mass
+- **Status**: Generally not recommended for new purchases as other devices offer more features at similar prices
+- **Connector**: DC barrel jack
+
+### TS101
+
+Direct replacement for the TS100 with the same tip compatibility.
+
+- **Voltage Range**: Supports up to 28V EPR under both IronOS and official firmware
+- **Power Delivery**: USB-C PD support
+- **Tip Mechanism**: Spring pressure holding (easier swapping, less secure than screw)
+- **MCU**: STM32 clone with quirks affecting screen performance
+- **Bootloader**: Programming can be challenging; updates needed less frequently
+- **Note**: Miniware bootup logo is burned into bootloader and cannot be removed
+
+### TS80
+
+Successor to TS100 with custom smaller tips optimized for lower wattages.
+
+- **Voltage**: 9V/2A
+- **Protocol**: Quick Charge 3.0 (QC3) only
+- **Max Power**: 18W
+- **Connector**: USB-A (older power banks)
+- **Important**: Does NOT support USB-PD and will not work with USB-C power supplies in most cases
+
+### TS80P
+
+Direct successor to TS80 with improved power compatibility.
+
+- **Quick Charge**: 9V/2A, 12V/1.5A (18W max)
+- **Power Delivery**: 9V/3A & 12V/3A (30W max)
+- **Connector**: USB-C
+- **Tip Removal**: Faster mechanism than TS80
+- **Note**: Requires valid PD device supporting 12V/3A to achieve full 30W potential; otherwise falls back to 9V/18W
+
+### MHP30
+
+**M**ini **H**ot **P**late with different internal architecture.
+
+- **Accelerometer**: MSA301 (mounted in middle of unit)
+- **USB-PD**: FUSB302 chip
+- **I2C Bus**: Hardware I2C on PB6/7 for MSA301 and FUSB302
+- **Display**: SSD1306 OLED on bit-banged bus
+- **DC/DC**: Contains buck DC/DC converter (unlike other devices)
+
+### Pinecil
+
+First model from PINE64 with full schematic availability.
+
+- **Schematics**: Available on Pine64 Wiki
+- **Support**: Only vendor providing financial support and direct engineering team contact
+- **Voltage Range**: Wide input voltage support via USB-C PD
+- **Special Features**: Unpopulated hall effect sensor footprint (U14) for optional auto-sleep
+- **Firmware**: Designed with IronOS in mind
+
+## Key Technical Notes
+
+### No DC/DC Converters (Except MHP30)
+
+All devices **except the MHP30** do NOT contain DC/DC converters. This means:
+
+- Power at the tip is a direct function of supplied voltage
+- Higher voltage PSU = higher performance
+- Always use voltage near the upper limit where possible
+- PD adapters are highly recommended as they allow the iron to know supply limitations
+
+### Power Control Mechanism
+
+Irons can only turn the tip on and off in software (PWM control). They cannot control maximum power drawn from the supply. When using PD, the iron may select a lower voltage than your power supply's maximum to prevent over-current failures.
+
+For more information about power management, see the [Power documentation](/advanced/power-management).
+
+## Vendor Support
+
+### Miniware (TS100/TS80/TS80P)
+
+No longer provides source code, schematics, or support for open source firmware. Only TS100/TS80/TS80P are "open" to any extent. This can slow support for issues or new features.
+
+### Sequre (S60)
+
+Has provided schematics, showing support for the open source community.
+
+### Pine64 (Pinecil)
+
+- Provides downloadable schematics on Pine64 Wiki
+- Only vendor with financial support for IronOS project
+- Direct access to engineering teams for hardware issues
+- Devices designed with IronOS in mind
+- Results in generally better and faster support
+
+## Tip Resistance Values
+
+Tip resistance affects power delivery (P = V² ÷ Ω):
+
+- **6.2Ω**: Pine64 short tip
+- **8.0Ω**: TS100/Pinecil long tip
+- **4.5Ω**: TS80(P)
+
+Higher voltage with same resistance delivers significantly more power due to the squared relationship.

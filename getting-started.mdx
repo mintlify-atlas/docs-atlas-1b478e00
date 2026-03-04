@@ -1,0 +1,288 @@
+---
+title: Getting Started
+description: Learn how to install IronOS firmware and start using your soldering iron with confidence
+---
+
+# Getting Started with IronOS
+
+This guide will help you install IronOS firmware on your device and understand the basics of operation.
+
+## Installation
+
+<Steps>
+  <Step title="Download the firmware">
+    Visit the [releases page](https://github.com/Ralim/IronOS/releases) and download the firmware file for your device model with your preferred language support.
+    
+    <Note>
+    Pay attention to the language code in the file name. Currently 31 languages are supported.
+    </Note>
+  </Step>
+  
+  <Step title="Enter DFU/Bootloader mode">
+    Put your device into DFU (Device Firmware Update) or bootloader mode:
+    
+    - Hold down the **+/A button** (the button near the front/tip)
+    - While holding the button, connect the device to a power source
+    - Keep holding until the device powers on in bootloader mode
+  </Step>
+  
+  <Step title="Flash the firmware">
+    Flash the firmware using one of these methods:
+    
+    - **Drag-and-drop**: Use your operating system's file manager to drag the firmware file onto the device (appears as a USB drive)
+    - **Flashing tool**: Use a dedicated flashing tool specific to your device
+    
+    <Warning>
+    For device-specific flashing instructions, refer to the flashing guide for your model below.
+    </Warning>
+  </Step>
+</Steps>
+
+## Device-Specific Flashing Guides
+
+For detailed installation notes specific to your device, please refer to the appropriate flashing guide:
+
+<CardGroup cols={2}>
+  <Card title="MHP30" icon="heat" href="https://ralim.github.io/IronOS/Flashing/MHP30">
+    Mini Hot Plate flashing guide
+  </Card>
+  <Card title="Pinecil V1" icon="microchip" href="https://ralim.github.io/IronOS/Flashing/Pinecil%20V1/">
+    Pine64 Pinecil V1 flashing guide
+  </Card>
+  <Card title="Pinecil V2" icon="microchip" href="https://ralim.github.io/IronOS/Flashing/Pinecil%20V2/">
+    Pine64 Pinecil V2 flashing guide
+  </Card>
+  <Card title="TS80 / TS80P" icon="screwdriver-wrench" href="https://ralim.github.io/IronOS/Flashing/TS80%28P%29/">
+    Miniware TS80/TS80P flashing guide
+  </Card>
+  <Card title="TS100" icon="screwdriver-wrench" href="https://ralim.github.io/IronOS/Flashing/TS100">
+    Miniware TS100 flashing guide
+  </Card>
+  <Card title="TS101" icon="screwdriver-wrench">
+    Miniware TS101 flashing guide
+  </Card>
+</CardGroup>
+
+<Note>
+**Update Recommendation**: It is recommended to update to the newest stable release when you first receive your device to ensure you are up to date.
+</Note>
+
+## First Power On
+
+When you first power on your device after flashing IronOS:
+
+<Warning>
+You may see a warning about system settings being reset. **Do not panic** - this is completely normal! This message appears when the internal structure has changed between firmware versions.
+</Warning>
+
+If you receive warnings about the accelerometer or USB-PD not being detected, please see the [hardware issues documentation](https://ralim.github.io/IronOS/HardwareIssues/).
+
+## The Home Screen
+
+The home screen (also called the idle screen) is the landing page of the firmware. From here you can access two main functions:
+
+![Home Screen Layout](https://raw.githubusercontent.com/Ralim/IronOS/dev/Documentation/images/HomeScreen.png)
+
+### Screen Elements
+
+- **Soldering iron icon**: Appears near the tip, indicating that pressing the front button (+/A) enters soldering mode
+- **Settings icon**: Slider controls or spanner icon near the rear, indicating that pressing the rear button (-/B) enters settings
+- **Power indicator**: Shows at the right side of the screen:
+  - Voltage display for DC power
+  - Battery icon (if battery mode is enabled)
+  - Power plug icon for AC adapters
+
+<Warning>
+If you see an **(X)** where the soldering iron icon should be, the firmware cannot detect the tip. Try removing and reinstalling the tip. If the issue persists, see the [hardware issues section](https://ralim.github.io/IronOS/HardwareIssues/).
+</Warning>
+
+### Screen Rotation
+
+The screen may be drawn mirrored depending on the orientation setting. IronOS supports automatic LCD rotation based on how you hold the device.
+
+### Burn-in Protection
+
+The OLED screen features automatic burn-in protection. If no buttons or movement are detected for a while, the screen will automatically blank. Any movement or button press will wake the screen.
+
+### Hidden Actions
+
+Two additional actions are available on the home screen:
+
+<Accordion title="Temperature Adjustment (Long press +/A)">
+  On devices without profile mode, pressing and holding the front button (+/A) enters the temperature adjustment screen. This allows you to adjust the set temperature **before** the tip starts to heat.
+</Accordion>
+
+<Accordion title="Debug Menu (Long press -/B)">
+  Pressing and holding the rear button (-/B) takes you into the [debug menu](https://ralim.github.io/IronOS/DebugMenu/) for troubleshooting and diagnostics.
+</Accordion>
+
+## Soldering Mode
+
+When you press the front button to enter soldering mode, the iron will instantly start heating the tip.
+
+<Note>
+The firmware defaults to **320°C** as the set point for soldering mode.
+</Note>
+
+### Controls in Soldering Mode
+
+| Action | Function |
+|--------|----------|
+| Short press +/A or -/B | Adjust temperature up or down |
+| Long press +/A | Enter **Boost mode** (temporary temperature override) |
+| Long press -/B | Exit to home screen (stop heating) |
+| Press both buttons | Exit to home screen (compatibility mode) |
+| Hold both buttons | Enter **locked mode** (prevent accidental button presses) |
+
+### Boost Mode
+
+Boost mode allows a temporary override of the set temperature to a higher (or lower) value. This is useful for:
+
+- Driving more wattage into large joints
+- Compensating for poor thermal connection
+- Quick temperature adjustments without changing your base setting
+
+Simply press and hold the front button (+/A) to activate boost mode for as long as you hold the button.
+
+### Locked Mode
+
+To prevent accidental button presses during soldering:
+
+1. Press and hold **both buttons** simultaneously
+2. The display will indicate locked mode
+3. Buttons will be disabled (except optionally boost mode, if enabled in settings)
+4. Repeat to unlock
+
+## Idle Sleep
+
+If the iron detects a period without significant movement, it will automatically enter sleep mode.
+
+### Sleep Mode Behavior
+
+- Temperature automatically lowers to **150°C** (default, customizable)
+- Screen displays "Zzzz" graphic or text in detailed mode
+- Reduces oxidation and tip damage
+- Extends tip longevity
+
+### Waking from Sleep
+
+- Pick up or move the iron (motion detection)
+- Press any button
+
+<Note>
+**Tip Longevity**: When not using the iron, unplug it or let it sleep to increase the longevity of replaceable tips.
+</Note>
+
+### Hall Effect Sensor (Pinecil Only)
+
+Pinecil has an optional hall effect sensor feature:
+
+- Unpopulated footprint (U14) for Si7210-B-00-IV hall effect sensor
+- Place a neodymium magnet on your holder stand
+- Iron automatically sleeps when placed in stand
+- 10 user-defined sensitivity settings (0=off, 1=lowest, 9=highest)
+- [Installation details](https://ralim.github.io/IronOS/HallSensor/)
+
+## Idle Shutdown
+
+If the iron remains in sleep mode without movement for an extended period (default: **10 minutes**), it will automatically shut down and return to the home screen.
+
+## Profile Mode
+
+<Note>
+**MHP30 Only**: Profile mode is currently only available on the MHP30 mini hot plate device.
+</Note>
+
+Profile mode enables reflow soldering with customizable temperature profiles:
+
+<Steps>
+  <Step title="Enter profile mode">
+    Long press +/A on the home screen. Temperature must be below 55°C.
+  </Step>
+  
+  <Step title="Preheat phase">
+    Device raises temperature to configured preheat temperature at the configured preheat speed.
+  </Step>
+  
+  <Step title="Phase execution">
+    Temperature gradually moves through each configured phase with specified durations and end temperatures.
+  </Step>
+  
+  <Step title="Cooldown">
+    After all phases complete, device cools to 0°C at the configured cooldown speed.
+  </Step>
+  
+  <Step title="Completion">
+    Once temperature drops below 55°C, the buzzer sounds (if available) and profile mode exits.
+  </Step>
+</Steps>
+
+You can manually exit profile mode by pressing and holding the rear button or pressing both buttons at once.
+
+## Settings Menu
+
+The settings menu provides access to all firmware configuration options.
+
+### Navigation
+
+- **-/B button**: Enter menu and scroll down through options
+- **+/A button**: Enter and change the current option
+- **Long press**: Change through options faster with acceleration
+- **Wait a few seconds**: See scrolling description of the current option
+
+### Menu Structure
+
+The menu consists of:
+
+- **Main menu**: Categories of settings
+- **Sub-menus**: Individual parameters within each category
+- **Scrollbar**: Small dot on the right edge indicates position in list
+- **Blink indicator**: Scrollbar blinks rapidly when at the last value in a range
+
+<Note>
+Every menu option has an on-screen description - just wait a few seconds and it will scroll across the screen.
+</Note>
+
+### Exploring Settings
+
+Take a few minutes to go through all options in the menu. Almost every aspect of the internal system is adjustable:
+
+- Temperature settings (soldering, boost, sleep)
+- Power management
+- Motion sensitivity
+- Display options
+- Sleep and shutdown timers
+- Advanced features
+
+### Reset to Defaults
+
+To restore default settings:
+
+1. Navigate to **Advanced settings**
+2. Select **Restore default settings**
+3. Confirm using the front (+/A) button
+
+This resets all menu items to defaults while keeping the same firmware version.
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="Menu Information" icon="bars" href="https://ralim.github.io/IronOS/Menu/">
+    Detailed documentation of all menu options
+  </Card>
+  <Card title="Debug Menu" icon="bug" href="https://ralim.github.io/IronOS/DebugMenu/">
+    Learn about debugging and diagnostics
+  </Card>
+  <Card title="Hardware Issues" icon="triangle-exclamation" href="https://ralim.github.io/IronOS/HardwareIssues/">
+    Troubleshooting hardware problems
+  </Card>
+  <Card title="Power Management" icon="battery-full" href="https://ralim.github.io/IronOS/Power/">
+    Understanding power management
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Card title="Supported Hardware" icon="list" href="/supported-hardware">
+  Learn about all devices that run IronOS and their capabilities
+</Card>

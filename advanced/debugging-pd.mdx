@@ -1,0 +1,297 @@
+---
+title: USB-PD Debugging
+description: Troubleshooting USB Power Delivery issues and compatibility
+---
+
+When using USB-PD power supplies with IronOS devices, you may occasionally encounter boot issues, reboots, or power negotiation failures. This guide helps diagnose and resolve USB-PD compatibility problems.
+
+## Common Issues
+
+USB-PD problems typically manifest in three ways:
+
+1. Device doesn't power up at all
+2. Device powers up but reboots continuously
+3. Device reboots when heating starts
+
+### Root Causes
+
+- IronOS PD stack bugs or incompatibilities (rare)
+- Power adapter issues or quirks
+- "Smart" adapters with compatibility problems
+- Insufficient power delivery capacity
+- Cable limitations
+
+<Note>
+**Unique Load Pattern**: Soldering irons rapidly switch from 0 to full power, unlike laptops/phones that ramp gradually. This can trip protection circuits on some power supplies.
+</Note>
+
+## Recommended Power Supplies
+
+<Tip>
+**Best Choice**: Normal, boring 60-100W single-port PD supply.
+</Tip>
+
+### What to Avoid
+
+<Warning>
+**Multi-port marketing tricks**: Watch for 65W adapters with multiple ports (e.g., 45W + 20W) that cannot deliver 65W to a single port.
+</Warning>
+
+- Multi-port adapters at full capacity
+- "Smart" chargers implementing every protocol
+- Budget adapters with shortcuts in PD implementation
+- Adapters with aggressive protection circuits
+
+### Smarter Chargers
+
+Chargers implementing many protocols (QC, PD, PPS, AFC, etc.) may have quirks:
+
+- Slight shortcuts in PD implementation
+- Protocol switching issues
+- Hard-to-debug compatibility problems
+
+## Device Doesn't Power Up
+
+This is the most frustrating issue to diagnose.
+
+### Step 1: Rule Out Other Issues
+
+<Steps>
+  <Step title="Test with USB-A to USB-C">
+    Connect using a USB-A to USB-C cable (5V power) to rule out:
+    - Bad firmware flash
+    - Non-functioning display
+    - Hardware failure
+  </Step>
+  <Step title="Test with DC power">
+    If available, test with a DC barrel power supply to verify basic functionality.
+  </Step>
+</Steps>
+
+### No Power on Any Supply
+
+If the device won't power up on **any** supply type:
+
+1. **Check bootloader access**: Hold down the button while connecting to a computer
+2. **Verify detection**: Check if the device appears in device manager / system
+
+<Info>
+If the device shows up to a computer but doesn't operate normally:
+
+- **Bad flash/firmware** (most likely)
+- **Non-functioning display** (device may be working but not showing output)
+
+Try pressing the front button to test heating function.
+</Info>
+
+### Powers Up on Other Supplies
+
+If the device works with USB-A or DC but not USB-PD:
+
+<Steps>
+  <Step title="Test different PD supply">
+    Try another USB-PD adapter to isolate adapter-specific issues.
+  </Step>
+  <Step title="Check cable">
+    Use a different USB-C cable (preferably e-marked for high power).
+  </Step>
+  <Step title="Inspect connector">
+    Look for debris or damage in the USB-C port.
+  </Step>
+</Steps>
+
+<Warning>
+**Hardware Damage Possibility**: If the device doesn't power on with **any** PD supply:
+
+- Damaged PD PHY chip
+- USB connector CC pin damage
+
+USB-PD uses CC pins not utilized by USB-A adapters, so USB-A may work while PD fails.
+</Warning>
+
+## Device Reboots Continuously
+
+### Reboot During Heat-Up
+
+If reboot occurs when the unit starts heating:
+
+<Warning>
+**Power Supply Insufficient**: The adapter cannot supply the requested power.
+</Warning>
+
+**Solutions**:
+
+- Use higher wattage power supply (60W minimum, 100W recommended)
+- Verify cable rating (non e-marked cables limited to 3A)
+- Check adapter specifications match printed ratings
+- Try single-port adapter instead of multi-port
+
+### Reboot During Idle
+
+If the device reboots frequently without button presses:
+
+**Cause**: PD negotiation failure
+
+<Note>
+**The Best Debugging Tool**: Capture USB-PD traffic. Without a traffic capture, all debugging is guessing.
+</Note>
+
+## Capturing PD Traffic
+
+To truly understand negotiation failures, you need to capture the PD communication.
+
+### Method 1: Logic Analyzer
+
+- Connect to CC pins on USB-C connector
+- **Important**: PD signaling is less than 3.3V
+- Use logic analyzer capable of less than 3.3V levels or add buffering
+- Capture during connection and negotiation phase
+
+### Method 2: USB Power Meter
+
+Many high-end USB power meters can capture PD packets:
+
+- On-screen display (minimum)
+- File export capability (ideal)
+
+Recommended meters with PD capture:
+
+- AVHzY CT-3
+- ChargerLAB POWER-Z
+- FNB58
+
+<Warning>
+**Without a traffic capture, all debugging is guessing**. Investment in a PD-capable meter pays dividends for any USB-PD debugging.
+</Warning>
+
+## Firmware PD Mode Settings
+
+<Info>
+**Firmware 2.23+**: Advanced settings include PD mode toggle to adjust negotiation behavior.
+</Info>
+
+### PD Mode Options
+
+The firmware can enable/disable:
+
+- **PPS** (Programmable Power Supply): Dynamic voltage negotiation
+- **EPR** (Extended Power Range): Voltages above 20V (PD3.1)
+
+<Tip>
+PPS is known to be incorrectly implemented on some supplies. Disabling PPS and EPR can improve compatibility with problematic adapters.
+</Tip>
+
+### Accessing PD Mode Settings
+
+1. Navigate to **Settings** → **Advanced Settings**
+2. Find **PD Negotiation** option
+3. Toggle between modes:
+   - **PD + PPS + EPR** (full featured)
+   - **PD + PPS** (no EPR)
+   - **PD Only** (maximum compatibility)
+
+## PD Debug Menu
+
+<Tip>
+**Pinecil Devices**: Boot while holding the front button to enter PD debug menu.
+</Tip>
+
+The debug menu displays:
+
+- Advertised voltage levels
+- Available power profiles
+- Current negotiation state
+- EPR capability status
+
+### Viewing Debug Menu
+
+<Steps>
+  <Step title="Remove tip">
+    Remove the tip from the iron. Most devices won't negotiate PD without a tip installed (waiting to detect tip type). This prevents failing negotiations.
+  </Step>
+  <Step title="Hold button and connect">
+    Hold front button while connecting to USB-PD supply.
+  </Step>
+  <Step title="Review advertised profiles">
+    Compare displayed voltages/power with adapter specifications printed on the device.
+  </Step>
+</Steps>
+
+### What to Check
+
+- **Voltage profiles**: Match adapter specifications
+- **Current limits**: Verify cable rating (3A for non e-marked)
+- **EPR availability**: Requires EPR-rated cable
+- **Profile selection**: Confirm highest appropriate profile is chosen
+
+## Cable Requirements
+
+### Standard USB-C Cables
+
+<Warning>
+**Non e-marked cables are limited to 3A (60W at 20V)**.
+</Warning>
+
+### E-Marked Cables
+
+Required for:
+
+- Power delivery above 60W (3A)
+- 5A operation (100W at 20V)
+- EPR modes (28V, 36V, 48V)
+
+E-marked cables contain a chip that identifies their capabilities.
+
+### Cable Testing
+
+If experiencing issues:
+
+1. Test with certified e-marked cable
+2. Use short cable (less than 1m) to reduce resistance
+3. Verify cable temperature during use (hot cable = excessive resistance)
+
+## Systematic Troubleshooting
+
+Before filing a support request:
+
+<Steps>
+  <Step title="Test multiple adapters">
+    Try 2-3 different USB-PD adapters from different manufacturers.
+  </Step>
+  <Step title="Test multiple cables">
+    Use different USB-C cables, including at least one e-marked cable.
+  </Step>
+  <Step title="Try PD mode settings">
+    Disable PPS and EPR to test compatibility mode.
+  </Step>
+  <Step title="Capture PD traffic (if possible)">
+    Use logic analyzer or PD-capable meter to record negotiation.
+  </Step>
+  <Step title="Check PD debug menu">
+    Verify advertised profiles match adapter specifications.
+  </Step>
+</Steps>
+
+## Filing Support Requests
+
+When reporting PD issues, include:
+
+1. **Device model** and **firmware version**
+2. **Power adapter**: Make, model, specifications
+3. **Cable**: Type, rating, e-marked status
+4. **Behavior**: Specific symptoms and when they occur
+5. **Testing results**: What works, what doesn't
+6. **PD traffic capture**: If available (exponentially helpful)
+7. **PD debug menu**: Screenshots or photos
+8. **Settings**: Current PD mode configuration
+
+<Note>
+A PD traffic capture makes the problem **exponentially easier** to diagnose and fix. It's the difference between guessing and knowing.
+</Note>
+
+## Resources
+
+- [USB-PD Specification](https://www.usb.org/document-library/usb-power-delivery)
+- [Power Management](/advanced/power-management)
+- [Power Sources Documentation](https://ralim.github.io/IronOS/PowerSources/)
+- [IronOS GitHub Issues](https://github.com/Ralim/IronOS/issues)

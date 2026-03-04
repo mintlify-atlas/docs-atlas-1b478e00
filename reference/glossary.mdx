@@ -1,0 +1,417 @@
+---
+title: Glossary
+description: Terms and definitions used in IronOS documentation
+---
+
+This glossary defines technical terms and concepts used throughout the IronOS documentation.
+
+## General Terms
+
+### IronOS
+
+Open source flexible firmware for soldering hardware. Originally developed for the TS100, it now supports multiple soldering irons and reflow devices.
+
+### Firmware
+
+Software that runs directly on the soldering iron hardware, controlling temperature, power management, and user interface.
+
+### DFU (Device Firmware Update)
+
+A USB standard for updating firmware on embedded devices. Some IronOS devices use DFU mode for firmware updates.
+
+### Flash / Flashing
+
+The process of installing or updating firmware on a device.
+
+### Bootloader
+
+Small program that runs when the device powers on, responsible for loading the main firmware or entering update mode.
+
+## Hardware Terms
+
+### Tip
+
+The replaceable heating element that transfers heat to your soldering work. Different devices use different tip types.
+
+### Tip Resistance
+
+The electrical resistance of the soldering tip, measured in ohms (Ω). Used by firmware for power calculations and tip detection.
+
+### Tip Sense
+
+Hardware feature that allows the device to detect tip resistance and automatically configure settings. Available on Pinecil V2, TS101, and MHP30.
+
+### Handle Temperature
+
+Temperature of the internal PCB/handle, measured by a temperature sensor. Used for Cold Junction Compensation.
+
+### OLED (Organic Light-Emitting Diode)
+
+The display technology used in IronOS devices. Typically 96x16 pixels on most irons, with some newer devices using higher resolutions.
+
+### Accelerometer
+
+Motion sensor inside the device that detects movement for automatic sleep/wake functionality.
+
+### Hall Effect Sensor
+
+Optional magnetic field sensor (Pinecil only) that can detect when the iron is placed on a magnetic stand to trigger sleep mode.
+
+### MOSFET (Metal-Oxide-Semiconductor Field-Effect Transistor)
+
+Electronic switch used to control power to the soldering tip.
+
+### Op-Amp (Operational Amplifier)
+
+Electronic component used to amplify the small voltage signals from the tip temperature sensor.
+
+### MCU (Microcontroller Unit)
+
+The main processor chip that runs IronOS firmware. Common MCUs include STM32 and RISC-V chips.
+
+## Power Terms
+
+### DC (Direct Current)
+
+Power supplied at a constant voltage, typically from a barrel jack connector or battery pack.
+
+### USB-PD (USB Power Delivery)
+
+USB standard for negotiating higher power levels (up to 100W+). Allows dynamic voltage and current negotiation.
+
+### EPR (Extended Power Range)
+
+USB-PD extension that allows voltages up to 28V for higher power delivery (up to 240W). Supported on Pinecil V2 and TS101.
+
+### PPS (Programmable Power Supply)
+
+USB-PD feature allowing fine-grained voltage adjustment in small increments.
+
+### QC (Quick Charge)
+
+Qualcomm's fast charging standard. QC 3.0 is commonly used with TS80 and TS80P devices.
+
+### Cutoff Voltage
+
+Minimum voltage at which the iron will shut off heating to protect battery packs from over-discharge.
+
+### Power Pulse
+
+Feature that briefly activates the heater to draw current and prevent power banks from auto-shutting off.
+
+### Wattage / Power
+
+Rate of energy transfer, measured in watts (W). Higher wattage = faster heating and ability to maintain temperature on larger joints.
+
+### Voltage
+
+Electrical potential, measured in volts (V). Higher voltage generally allows more power delivery to the tip.
+
+### Current
+
+Flow of electricity, measured in amperes (A). Current × Voltage = Power (Watts).
+
+## Temperature Terms
+
+### Set Point / Target Temperature
+
+The desired temperature you've configured the iron to maintain during soldering.
+
+### Boost Temperature
+
+Higher temperature setting that can be temporarily activated by holding the front button during soldering.
+
+### Sleep Temperature
+
+Lower temperature (default 150°C) that the iron drops to during sleep mode to reduce oxidation and extend tip life.
+
+### CJC (Cold Junction Compensation)
+
+Technique to accurately measure tip temperature by compensating for the handle temperature. Uses the handle temperature sensor as a reference.
+
+### Thermal Runaway
+
+Dangerous condition where temperature sensor has failed and temperature cannot be controlled. IronOS detects this and shuts down heating.
+
+### PID (Proportional-Integral-Derivative)
+
+Control algorithm used to maintain precise tip temperature by adjusting heating power based on temperature error.
+
+### RTip
+
+Raw tip temperature reading in microvolts (μV), visible in the Debug menu.
+
+### CHan
+
+Handle/cold junction temperature reading in Debug menu, displayed as °C × 10.
+
+## Operation Modes
+
+### Idle Mode / Standby Mode
+
+Default state showing the home screen. Iron is not heating.
+
+### Soldering Mode
+
+Active heating mode where the iron maintains your set temperature.
+
+### Sleep Mode
+
+Power-saving mode entered after period of no movement. Temperature drops to sleep temp (default 150°C).
+
+### Boost Mode
+
+Temporary temperature override activated by holding front button during soldering.
+
+### Locked Mode
+
+Mode where buttons are disabled to prevent accidental presses. Activated by holding both buttons during soldering.
+
+### Profile Mode
+
+Special mode (MHP30 only) that executes a predefined heating profile for reflow soldering.
+
+### Debug Menu
+
+Hidden menu (accessed by long-holding back button on home screen) showing internal measurements and diagnostics.
+
+## Settings Terms
+
+### Motion Sensitivity
+
+How sensitive the accelerometer is to movement for sleep/wake detection. Range: 0 (off) to 9 (most sensitive).
+
+### Sleep Timeout
+
+Time period of inactivity before entering sleep mode. Configurable in seconds or minutes.
+
+### Shutdown Timeout
+
+Time period in sleep mode before completely shutting off and returning to home screen. Configurable in minutes.
+
+### Temperature Increment
+
+Amount the temperature changes with each button press (short press or long press).
+
+### Start-up Behavior
+
+What the iron does when powered on:
+- **S (Soldering)**: Immediately heat to soldering temp
+- **Z (Sleep)**: Standby at sleep temp until moved
+- **R (Room)**: Standby without heating until moved
+
+### Auto Rotation
+
+Automatic screen rotation based on device orientation detected by accelerometer.
+
+### Detailed View
+
+Text-based display mode showing more information than icon-based screens.
+
+### Scrolling Speed
+
+How fast help text scrolls in the settings menu.
+
+### Animation Loop
+
+Whether menu animations continuously loop or play once.
+
+## User Interface Terms
+
+### Home Screen
+
+See Idle Mode.
+
+### +/A Button
+
+Front button closest to the tip (on irons) or left side (on plates). Used to enter soldering mode and increase values.
+
+### -/B Button
+
+Rear button farthest from tip (on irons) or right side (on plates). Used to enter settings and decrease values.
+
+### Short Press
+
+Button press of approximately 1 second or less.
+
+### Long Press / Long Hold
+
+Holding a button for more than 1-2 seconds.
+
+### Scrollbar
+
+Small indicator on right edge of screen showing position in menus or lists.
+
+### Boot Logo
+
+Custom image displayed when the device powers on. Can be animated.
+
+## Bluetooth Terms (Pinecil V2)
+
+### BLE (Bluetooth Low Energy)
+
+Low-power Bluetooth technology used on Pinecil V2 for wireless communication.
+
+### Live Service
+
+BLE service providing real-time telemetry data like temperature, voltage, and power.
+
+### Settings Service
+
+BLE service allowing remote reading and writing of device settings.
+
+### Bulk Service
+
+BLE service providing large data reads for efficiency.
+
+### UUID (Universally Unique Identifier)
+
+Unique identifier used to identify BLE services and characteristics.
+
+### Characteristic
+
+Individual data point or setting accessible via BLE.
+
+## Flashing / Update Terms
+
+### .dfu File
+
+Firmware file format used for Device Firmware Update. Used by most IronOS devices.
+
+### .bin File
+
+Raw binary firmware file. Older format, largely replaced by .dfu files.
+
+### blisp
+
+Command-line tool for flashing Pinecil V2 firmware.
+
+### PineFlash
+
+GUI tool for flashing Pinecil V1 and V2 firmware.
+
+### Multi-lang / Multi-lingual
+
+Firmware builds containing multiple languages, allowing language switching on device.
+
+### Language Code
+
+Two-letter code in firmware filename indicating the language (e.g., EN for English).
+
+## Advanced Terms
+
+### I2C (Inter-Integrated Circuit)
+
+Communication protocol used to connect OLED display, accelerometer, and other components.
+
+### ADC (Analog-to-Digital Converter)
+
+Converts analog voltage signals (like tip temperature) to digital values the MCU can process.
+
+### PWM (Pulse Width Modulation)
+
+Technique for controlling tip heating by rapidly switching power on and off.
+
+### FreeRTOS
+
+Real-time operating system used by IronOS for task scheduling and multitasking.
+
+### HAL (Hardware Abstraction Layer)
+
+Software layer that provides consistent interface to different hardware components.
+
+### Clone MCU
+
+Non-genuine microcontroller chip that mimics original but may have quirks or limitations. Common in some Miniware devices.
+
+### Bit-bang
+
+Software-based implementation of communication protocol instead of using dedicated hardware.
+
+### VBus
+
+USB voltage bus. VBus mod refers to hardware modification to monitor USB power.
+
+## File System Terms
+
+### Drag and Drop
+
+Simple update method (Miniware devices) where firmware file is copied to device appearing as USB drive.
+
+### Metadata
+
+Information about firmware releases used by automatic updater tools.
+
+### Git Hash
+
+Unique identifier for specific firmware build, shown in device info.
+
+## Tip Types
+
+### T100 Tips
+
+Standard tips compatible with TS100 and Pinecil. Approximately 8Ω resistance.
+
+### Hakko T12 Tips
+
+Common soldering tip standard compatible with TS100 and Pinecil. Approximately 8Ω resistance.
+
+### Short Tips
+
+Pinecil-specific shorter tips with lower resistance (~6.2Ω) allowing higher power.
+
+### JBC Tips
+
+Professional tip standard used by Sequre S60. Known for variety of small precision tips.
+
+### 4 Ohm Tips
+
+Experimental lower-resistance tips (v2.23+). Use at your own risk.
+
+## Safety Terms
+
+### Overvoltage
+
+Voltage exceeding safe limits for device. Can damage hardware.
+
+### Overcurrent
+
+Current draw exceeding power supply or device capabilities.
+
+### Short Circuit
+
+Unintended direct connection between power and ground, causing excessive current.
+
+### Thermal Protection
+
+Safety features that prevent overheating or thermal runaway.
+
+### Battery Protection
+
+Features that prevent over-discharge of battery packs by monitoring cutoff voltage.
+
+## Community Terms
+
+### Pull Request (PR)
+
+Proposal to add code or changes to the IronOS project.
+
+### Issue
+
+Bug report or feature request on GitHub.
+
+### Discussion
+
+GitHub forum for asking questions and community interaction.
+
+### Contributor
+
+Someone who has contributed code, translations, documentation, or other improvements to IronOS.
+
+### Translation
+
+Localization of IronOS text to different languages. Stored as JSON files.
+
+### GPLv3 (GNU General Public License v3)
+
+Open source license used by IronOS, allowing free use, modification, and distribution.

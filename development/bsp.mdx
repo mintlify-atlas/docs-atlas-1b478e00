@@ -1,0 +1,607 @@
+---
+title: BSP Layer Documentation
+description: Board Support Package implementation guide for IronOS
+---
+
+The Board Support Package (BSP) layer provides hardware abstraction for different soldering iron models. This guide explains how the BSP works and how to implement one for new hardware.
+
+## BSP Overview
+
+The BSP layer isolates hardware-specific code from the rest of the firmware, allowing the same application code to run on different devices.
+
+**Purpose:**
+- Abstract hardware differences between devices
+- Provide consistent API to upper layers
+- Contain all device-specific initialization
+- Handle IRQ routing and hardware peripherals
+
+**Location:** `source/Core/BSP/`
+
+**Existing BSPs:**
+- `Miniware/` - TS100, TS80, TS80P, TS101 (STM32F103)
+- `Pinecil/` - Pinecil V1 (GD32VF103 RISC-V)
+- `Pinecilv2/` - Pinecil V2 (BL702 RISC-V)
+- `MHP30/` - MHP30 hot plate (STM32F103)
+- `Sequre/` - S60, S60P, T55 (STM32F103)
+
+## BSP Structure
+
+Each BSP directory contains:
+
+```
+BSP/DeviceName/
+├── configuration.h         # Device-specific configuration
+├── IRQ.cpp                # Interrupt service routines
+├── Setup.cpp              # Hardware initialization
+├── BSP.cpp                # Hardware abstraction implementation
+├── BSP_Flash.cpp          # Flash memory operations
+├── BSP_Power.cpp          # Power management
+├── Vendor/                # Manufacturer SDK/HAL
+│   ├── CMSIS/            # CMSIS headers
+│   └── STM32F1xx_HAL/    # STM32 HAL (example)
+└── README.md              # BSP-specific documentation
+```
+
+## Required BSP Functions
+
+### Initialization Functions
+
+#### preRToSInit()
+
+**Purpose:** Initialize hardware before FreeRTOS starts
+
+**Called:** Before `vTaskStartScheduler()`
+
+**Responsibilities:**
+- Configure system clocks
+- Initialize GPIO pins
+- Set up basic peripherals (UART for debug, etc.)
+- Initialize watchdog timer
+- Configure interrupt priorities
+
+**Example:**
+```cpp
+void preRToSInit() {
+  // Configure system clock
+  SystemClock_Config();
+  
+  // Initialize GPIO
+  GPIO_Init();
+  
+  // Setup watchdog
+  Watchdog_Init();
+  
+  // Configure NVIC priorities
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+}
+```
+
+#### postRToSInit()
+
+**Purpose:** Complete hardware initialization after FreeRTOS starts
+
+**Called:** After scheduler starts, from a task context
+
+**Responsibilities:**
+- Initialize I2C/SPI buses
+- Set up ADC for temperature sensing
+- Configure PWM for tip heating
+- Initialize accelerometer
+- Start USB-PD negotiation
+
+**Example:**
+```cpp
+void postRToSInit() {
+  // Initialize I2C bus
+  I2C_Init();
+  
+  // Setup ADC for temperature sensing
+  ADC_Init();
+  
+  // Configure PWM timer for tip control
+  PWM_Init();
+  
+  // Initialize OLED display
+  OLED_Init();
+}
+```
+
+### Temperature Sensing
+
+#### getTipRawTemp()
+
+**Purpose:** Read raw ADC value from tip temperature sensor
+
+**Signature:**
+```cpp
+uint16_t getTipRawTemp(uint8_t sample);
+```
+
+**Parameters:**
+- `sample` - Which ADC sample to read (for averaging)
+
+**Returns:** Raw ADC value (0-4095 for 12-bit ADC)
+
+**Implementation:**
+```cpp
+uint16_t getTipRawTemp(uint8_t sample) {
+  // Return filtered ADC reading
+  return tipTempSamples[sample];
+}
+```
+
+#### getTipColdJunctionTemp()
+
+**Purpose:** Read cold junction temperature for thermocouples
+
+**Signature:**
+```cpp
+uint16_t getTipColdJunctionTemp();
+```
+
+**Returns:** Temperature in decidegrees Celsius (°C × 10)
+
+**Notes:**
+- Only required for thermocouple-based designs
+- Often read from a dedicated sensor (thermistor, semiconductor sensor)
+- Used for cold junction compensation
+
+### Heating Control
+
+#### setTipPWM()
+
+**Purpose:** Set tip heating PWM duty cycle
+
+**Signature:**
+```cpp
+void setTipPWM(uint8_t pulse, bool forceOff);
+```
+
+**Parameters:**
+- `pulse` - PWM value (0-255 typically, or 0-100 for percentage)
+- `forceOff` - If true, force heater off regardless of pulse value
+
+**Implementation:**
+```cpp
+void setTipPWM(uint8_t pulse, bool forceOff) {
+  if (forceOff) {
+    pulse = 0;
+  }
+  
+  // Set hardware PWM
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);
+}
+```
+
+#### setTipX10Watts()
+
+**Purpose:** Set tip power in units of 0.1W
+
+**Signature:**
+```cpp
+void setTipX10Watts(uint16_t x10watts);
+```
+
+**Parameters:**
+- `x10watts` - Power in 0.1W units (e.g., 100 = 10W)
+
+**Implementation:**
+```cpp
+void setTipX10Watts(uint16_t x10watts) {
+  // Convert watts to PWM based on supply voltage
+  uint16_t voltage = getInputVoltageX10(0, 0);
+  uint16_t resistance = TIP_RESISTANCE;
+  
+  // P = V^2 / R, solve for V needed
+  // Then convert to PWM percentage
+  uint8_t pwm = calculatePWMFromWatts(x10watts, voltage, resistance);
+  
+  setTipPWM(pwm, false);
+}
+```
+
+### Communication Interfaces
+
+#### I2C Functions
+
+**I2C Read:**
+```cpp
+bool I2C_Read(uint8_t address, uint8_t *buffer, uint8_t length) {
+  HAL_StatusTypeDef status;
+  status = HAL_I2C_Master_Receive(&hi2c1, address << 1, buffer, length, 1000);
+  return (status == HAL_OK);
+}
+```
+
+**I2C Write:**
+```cpp
+bool I2C_Write(uint8_t address, uint8_t *buffer, uint8_t length) {
+  HAL_StatusTypeDef status;
+  status = HAL_I2C_Master_Transmit(&hi2c1, address << 1, buffer, length, 1000);
+  return (status == HAL_OK);
+}
+```
+
+**Memory Read (I2C register access):**
+```cpp
+bool I2C_Mem_Read(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t length) {
+  HAL_StatusTypeDef status;
+  status = HAL_I2C_Mem_Read(&hi2c1, address << 1, reg, I2C_MEMADD_SIZE_8BIT, 
+                             buffer, length, 1000);
+  return (status == HAL_OK);
+}
+```
+
+### Power Management
+
+#### getInputVoltageX10()
+
+**Purpose:** Read input supply voltage
+
+**Signature:**
+```cpp
+uint16_t getInputVoltageX10(uint16_t divisor, uint8_t sample);
+```
+
+**Parameters:**
+- `divisor` - Voltage divider ratio from settings
+- `sample` - Which ADC sample to use
+
+**Returns:** Voltage in units of 0.1V (e.g., 120 = 12.0V)
+
+#### preStartChecks()
+
+**Purpose:** Safety checks before allowing operation
+
+**Returns:** 0 if checks fail, non-zero if safe to proceed
+
+**Checks:**
+- Input voltage in acceptable range
+- Tip connected
+- No thermal runaway detected
+- Critical sensors responding
+
+### IRQ Handlers
+
+Interrupt handlers must be implemented to route hardware events:
+
+#### ADC Conversion Complete
+
+```cpp
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  
+  // Read ADC values
+  tipTempSamples[currentSample] = HAL_ADC_GetValue(hadc);
+  
+  // Notify PID thread
+  if (pidTaskNotification != NULL) {
+    vTaskNotifyGiveFromISR(pidTaskNotification, &xHigherPriorityTaskWoken);
+  }
+  
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+```
+
+#### Timer Interrupts
+
+For PID loop timing:
+
+```cpp
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim->Instance == TIM3) {
+    // Trigger ADC conversion
+    HAL_ADC_Start_IT(&hadc1);
+  }
+}
+```
+
+## Configuration Header
+
+The `configuration.h` file defines device-specific parameters:
+
+### Device Identification
+
+```cpp
+// Model identifiers
+#define MODEL_TS100
+#define DEVICE_NAME "TS100"
+```
+
+### Hardware Configuration
+
+```cpp
+// Display settings
+#define OLED_WIDTH  96
+#define OLED_HEIGHT 16
+
+// I2C configuration  
+#define OLED_I2C_ADDRESS 0x3C
+#define ACCEL_I2C_ADDRESS 0x18
+
+// Button configuration
+#define BUTTON_A_PIN GPIO_PIN_0
+#define BUTTON_B_PIN GPIO_PIN_1
+```
+
+### Thermal Parameters
+
+```cpp
+// Tip thermal characteristics
+#define TIP_THERMAL_MASS     120  // x10 J/°C
+#define TIP_THERMAL_INERTIA  10   // Inertia factor
+#define TIP_RESISTANCE       80   // x10 ohms (8.0Ω)
+
+// Temperature limits
+#define MIN_TEMP_C           10   // Minimum setpoint
+#define MAX_TEMP_C           450  // Maximum setpoint
+
+// Calibration
+#define CAL_OFFSET_STEP      50   // Calibration step size
+```
+
+### Control System Parameters
+
+```cpp
+// PID control frequency
+#define PID_TIM_HZ 8  // 8 Hz update rate
+
+// Power limits
+#define PID_POWER_LIMIT 70  // Max PWM percentage
+
+// Optional: PID gains (if using PID control)
+#ifdef TIP_CONTROL_PID
+#define TIP_PID_KP 10
+#define TIP_PID_KI 2
+#define TIP_PID_KD 1
+#endif
+
+// Thermal inertia for integrator control
+#define TIP_THERMAL_INERTIA 10
+```
+
+### Safety Features
+
+```cpp
+// Thermal runaway detection
+#define THERMAL_RUNAWAY_TIME_SEC 10  // Detection time
+#define THERMAL_RUNAWAY_TEMP_C   5   // Minimum delta
+
+// Voltage limits
+#define MIN_VOLTAGE_mV  6000   // 6.0V minimum
+#define MAX_VOLTAGE_mV  24000  // 24.0V maximum
+
+// ADC settings
+#define ADC_MAX_READING 0x7FFF
+```
+
+## Example: STM32F103 BSP
+
+The Miniware BSP shows a complete implementation:
+
+### Hardware Features
+- STM32F103 MCU (Cortex-M3)
+- SSD1306 OLED (I2C)
+- BMA223 accelerometer (I2C)
+- Thermocouple temperature sensing
+- USB connectivity
+- Single button input
+
+### Key Files
+
+**Setup.cpp:**
+```cpp
+void preRToSInit() {
+  HAL_Init();
+  SystemClock_Config();  // 72 MHz
+  GPIO_Init();
+  setupFUSBIRQ();        // USB-PD interrupt
+  MX_IWDG_Init();        // Watchdog
+}
+
+void postRToSInit() {
+  MX_I2C1_Init();        // I2C for OLED/accel
+  MX_ADC1_Init();        // Temperature sensing
+  MX_TIM2_Init();        // PWM for tip
+  MX_TIM3_Init();        // PID loop timer
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_ADC_Start(&hadc1);
+}
+```
+
+**BSP.cpp:**
+```cpp
+uint16_t getTipRawTemp(uint8_t sample) {
+  // Apply filtering and return ADC value
+  return tipMeasurementToRaw(tipTempSamples[sample]);
+}
+
+void setTipPWM(uint8_t pulse, bool forceOff) {
+  if (forceOff || pulse == 0) {
+    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+  } else {
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  }
+}
+```
+
+## BSP Design Guidelines
+
+### Keep It Simple
+
+- Implement only what's needed
+- Avoid unnecessary abstraction
+- Use manufacturer HAL/SDK when available
+
+### Thread Safety
+
+- Mark shared variables as `volatile`
+- Use critical sections for read-modify-write
+- Consider interrupt priorities
+
+### Error Handling
+
+- Return error codes from functions
+- Don't silently ignore hardware errors
+- Log errors when debug UART available
+
+### Performance
+
+- Keep ISRs short and fast
+- Defer processing to tasks when possible
+- Optimize hot paths (temperature reading, PWM update)
+
+### Maintainability
+
+- Comment hardware-specific quirks
+- Document calibration procedures
+- Provide clear pin definitions
+
+## Testing Your BSP
+
+### Basic Bring-Up
+
+1. **Power-On Test**
+   - Device boots without crash
+   - Watchdog doesn't reset
+   - Basic GPIO works
+
+2. **Display Test**
+   - I2C communication works
+   - OLED displays boot screen
+   - No corruption or artifacts
+
+3. **Input Test**
+   - Button presses detected
+   - Long press recognized
+   - Debouncing works correctly
+
+### Temperature Sensing
+
+4. **ADC Test**
+   - Reads reasonable values at room temp
+   - Values change when tip is heated externally
+   - No stuck readings or saturation
+
+5. **Cold Junction Test** (if applicable)
+   - CJ temp close to room temperature
+   - Changes appropriately with ambient
+
+### Heating Control
+
+6. **PWM Test**
+   - Tip heats when commanded
+   - PWM frequency appropriate (scope check)
+   - No excessive ringing or noise
+
+7. **Temperature Control**
+   - Reaches setpoint temperature
+   - Holds temperature steadily
+   - No oscillation or hunting
+
+8. **Power Limiting**
+   - Respects configured power limit
+   - Doesn't exceed safe current
+
+### Safety Features
+
+9. **UVLO Test**
+   - Shuts down at low voltage
+   - Resumes when voltage restored
+
+10. **Thermal Runaway**
+    - Detects sensor failures
+    - Shuts down on runaway
+
+## Debugging Tips
+
+### Enable Debug UART
+
+Add to `configuration.h`:
+```cpp
+#define DEBUG_UART_OUTPUT
+```
+
+Provides logging of:
+- Temperature readings
+- Power output
+- State transitions
+
+### Measure PWM Frequency
+
+Use oscilloscope to verify:
+- PWM frequency (typically 10-100 Hz for heating)
+- Duty cycle range (0-100%)
+- Rise/fall times acceptable
+
+### Check ADC Timing
+
+Verify:
+- ADC samples when heater is off
+- Sufficient settling time
+- Consistent sample rate
+
+### Monitor Task Stack Usage
+
+In debug builds:
+```cpp
+uxTaskGetStackHighWaterMark(PIDTaskHandle);
+```
+
+Ensure adequate stack margin.
+
+## Common Issues
+
+### Temperature Readings Unstable
+
+**Causes:**
+- ADC sampling during heating pulse
+- Insufficient filtering
+- Electrical noise coupling
+
+**Solutions:**
+- Sample only when heater off
+- Increase `TIP_THERMAL_INERTIA`
+- Add hardware filtering (capacitor)
+
+### Heating Too Slow/Fast
+
+**Causes:**
+- Incorrect `TIP_THERMAL_MASS`
+- Wrong PID/integrator gains
+- Power limit too low/high
+
+**Solutions:**
+- Calibrate thermal mass experimentally
+- Adjust control gains
+- Review power limit settings
+
+### Display Corruption
+
+**Causes:**
+- I2C timing issues
+- Wrong display controller
+- Voltage problems
+
+**Solutions:**
+- Verify I2C clock speed (typically 100-400 kHz)
+- Check display controller type (SSD1306 vs SH1106)
+- Ensure stable 3.3V supply
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Porting Guide" icon="plus" href="/development/porting">
+    Complete guide to porting IronOS
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand overall firmware structure
+  </Card>
+  <Card title="PID Control" icon="gauge" href="/development/pid-control">
+    Temperature control implementation
+  </Card>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Build firmware for your BSP
+  </Card>
+</CardGroup>

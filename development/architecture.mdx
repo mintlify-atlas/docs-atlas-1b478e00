@@ -1,0 +1,511 @@
+---
+title: Firmware Architecture
+description: Technical overview of IronOS firmware structure and design
+---
+
+IronOS is a multi-threaded firmware built on FreeRTOS, designed for resource-constrained embedded systems. This document provides a technical overview of the firmware architecture.
+
+## System Overview
+
+IronOS uses a layered architecture to separate hardware-specific code from application logic:
+
+```
+┌─────────────────────────────────────┐
+│      User Interface Layer           │
+│  (UI Logic + Drawing Routines)      │
+├─────────────────────────────────────┤
+│     Application Layer               │
+│  (Settings, State Management)       │
+├─────────────────────────────────────┤
+│        Driver Layer                 │
+│  (OLED, Accelerometer, USB-PD)      │
+├─────────────────────────────────────┤
+│    Board Support Package            │
+│    (Hardware Abstraction)           │
+├─────────────────────────────────────┤
+│      Hardware (STM32, GD32, etc)    │
+└─────────────────────────────────────┘
+```
+
+## Core Components
+
+### FreeRTOS Threads
+
+IronOS uses multiple FreeRTOS tasks for concurrent operation:
+
+#### PID Thread (Highest Priority)
+
+**File:** `Core/Threads/PIDThread.cpp`
+
+**Purpose:** Temperature control loop
+
+**Frequency:** 8 Hz (configurable via `PID_TIM_HZ`)
+
+**Responsibilities:**
+- Read tip temperature from ADC
+- Execute PID/integrator control algorithm
+- Calculate power output to tip
+- Detect thermal runaway conditions
+- Apply power limits and safety checks
+
+**Priority:** `osPriorityRealtime` - Highest priority for safety
+
+#### UI Thread (Normal Priority)
+
+**Files:** `Core/Threads/UI/`
+
+**Purpose:** User interface and interaction
+
+**Responsibilities:**
+- Handle button input events
+- Render display output
+- Manage UI state machine
+- Process user settings changes
+
+**Structure:**
+- `logic/` - UI state machine and event handling
+- `drawing/` - Screen rendering (separated by display type)
+
+#### Movement Thread (Low Priority)
+
+**Purpose:** Motion detection for sleep/wake features
+
+**Responsibilities:**
+- Read accelerometer data
+- Detect device movement
+- Trigger sleep/wake transitions
+- Manage idle timeouts
+
+### Board Support Package (BSP)
+
+**Location:** `Core/BSP/`
+
+The BSP abstracts hardware differences between devices:
+
+```
+Core/BSP/
+├── Miniware/      # TS100, TS80, TS80P, TS101
+├── Pinecil/       # Pinecil V1 (GD32VF103)
+├── Pinecilv2/     # Pinecil V2 (BL702)
+├── MHP30/         # MHP30 hot plate
+└── Sequre/        # S60, S60P, T55
+```
+
+Each BSP implements:
+
+**Initialization:**
+```cpp
+void preRToSInit();   // Pre-RTOS hardware setup
+void postRToSInit();  // Post-RTOS hardware setup
+```
+
+**Hardware Control:**
+```cpp
+void setTipPWM(uint8_t pulse, bool forceOff);
+void setTipX10Watts(uint16_t x10watts);
+uint16_t getTipRawTemp(uint8_t sample);
+```
+
+**Communication:**
+```cpp
+bool I2C_Read(uint8_t address, uint8_t *buffer, uint8_t length);
+bool I2C_Write(uint8_t address, uint8_t *buffer, uint8_t length);
+```
+
+**Configuration:**
+- `configuration.h` - Device-specific constants
+- Hardware pin definitions
+- Thermal model parameters
+- Display dimensions
+
+### Driver Layer
+
+**Location:** `Core/Drivers/`
+
+Drivers provide abstraction for hardware components:
+
+**OLED Display:**
+- SSD1306 and SH1106 controllers
+- I2C and SPI interface support
+- Multiple display sizes (96x16, 128x32, etc.)
+
+**Accelerometers:**
+- BMA223, MSA301, LIS2DH12
+- I2C interface
+- Motion detection and tap sensing
+
+**USB-PD:**
+- FUSB302 controller driver
+- USB Power Delivery negotiation
+- Voltage and current monitoring
+
+**Tip Temperature Model:**
+- `TipThermoModel` class
+- Thermocouple linearization
+- Cold junction compensation
+- Thermal mass modeling
+
+### Application Layer
+
+**Settings Management:**
+
+**File:** `Core/Src/Settings.cpp`
+
+- Persistent storage of user preferences
+- Flash memory management
+- Default value handling
+- CRC validation
+
+**Power Management:**
+
+**File:** `Core/Src/power.cpp`
+
+- Input voltage monitoring
+- Power supply capability detection
+- Low voltage cutoff (UVLO)
+- Power limit enforcement
+
+**State Management:**
+
+UI states:
+- Idle/Startup
+- Soldering mode
+- Sleep mode
+- Settings menu
+- Boost mode
+
+## Temperature Control System
+
+### Control Algorithms
+
+IronOS supports two temperature control methods:
+
+#### 1. PID Control (Optional)
+
+Enabled by `TIP_CONTROL_PID` define:
+
+```cpp
+template <class T, T Kp, T Ki, T Kd, T integral_limit_scale> 
+struct PID {
+  T update(const T set_point, 
+           const T new_reading,
+           const TickType_t interval_ms,
+           const T max_output);
+};
+```
+
+**Parameters:**
+- `Kp` - Proportional gain
+- `Ki` - Integral gain  
+- `Kd` - Derivative gain
+- Anti-windup limiting
+
+#### 2. Self-Decaying Integrator (Default)
+
+Default control algorithm, optimized for small thermal mass:
+
+```cpp
+template <class T = TemperatureType_t> 
+struct Integrator {
+  T update(const T val,
+           const int32_t inertia,
+           const int32_t gain, 
+           const int32_t rate,
+           const int32_t limit);
+};
+```
+
+**Advantages:**
+- Better suited for high thermal inertia
+- Faster response to temperature changes  
+- Less overshoot on small thermal mass
+- Handles sensor noise better
+
+### Thermal Runaway Detection
+
+**Purpose:** Detect hardware failures before damage occurs
+
+**Detection Methods:**
+
+1. **Stuck Temperature Sensor:**
+   - Monitors temperature delta during heating
+   - If temp doesn't change → sensor failure
+
+2. **Runaway Heating:**
+   - Detects temperature rise when heater is off
+   - Indicates stuck MOSFET or similar failure
+
+3. **ADC Saturation:**
+   - Checks for readings at ADC limits
+   - May indicate sensor disconnection
+
+**Response:**
+- Increment `heaterThermalRunawayCounter`
+- If counter exceeds threshold → disable heater
+- Requires power cycle to reset
+
+### Power Output Filtering
+
+**Slew Rate Limiting:**
+
+Optional `SLEW_LIMIT` prevents rapid power changes:
+```cpp
+if (x10WattsOut - x10WattsOutLast > SLEW_LIMIT) {
+  x10WattsOut = x10WattsOutLast + SLEW_LIMIT;
+}
+```
+
+Reduces electrical noise and stress on components.
+
+**Keep-Awake Pulses:**
+
+Periodic power pulses prevent USB power banks from shutting off:
+- User-configurable interval and duration
+- Only applied when actual power demand is low
+- Helps maintain power during idle periods
+
+## User Interface Architecture
+
+### Separation of Concerns
+
+The UI is split into two parts:
+
+**Logic Layer:** `Core/Threads/UI/logic/`
+- Button event handling
+- State machine transitions  
+- Business logic
+- Timer management
+
+**Drawing Layer:** `Core/Threads/UI/drawing/`
+- Screen rendering only
+- No business logic
+- Organized by display type:
+  - `mono_96x16/` - 96x16 OLED displays
+  - `mono_128x32/` - 128x32 OLED displays
+
+**Benefits:**
+- Easy to add new display types
+- Logic reused across display variants
+- Simplified testing
+
+### UI State Machine
+
+Main states:
+1. **Idle** - Device on, tip cold
+2. **Soldering** - Active heating to target temp
+3. **Boost** - Temporary higher temperature  
+4. **Sleep** - Reduced temperature after idle
+5. **Settings** - Configuration menu
+6. **Debug** - Diagnostic information
+
+### Input Handling
+
+Button events:
+- Short press
+- Long press
+- Double click (on some models)
+- Press and hold
+
+Event filtering:
+- Debouncing
+- Long press detection
+- Context-sensitive actions
+
+## Translation System
+
+### Build-Time Translation
+
+**Location:** `Translations/`
+
+**Process:**
+1. Translation JSON files define strings
+2. `make_translation.py` generates C++ code
+3. Font glyphs extracted for used characters
+4. Optional compression for large character sets
+
+**Formats:**
+- **Single language** - One language per firmware
+- **Multi-language** - Multiple languages in one firmware
+- **Compressed multi-language** - BriefLZ compression applied
+
+**Font Handling:**
+- Base font: WenQuanYi 9pt bitmap font
+- Subset extracted per translation
+- Supports Latin, Cyrillic, CJK characters
+
+### Runtime Language Selection
+
+For multi-language builds:
+- Language setting stored in flash
+- UI strings looked up at runtime
+- Font data decompressed as needed
+
+## Memory Management
+
+### Flash Memory Layout
+
+Typical flash organization:
+
+```
+0x08000000  ┌─────────────────┐
+            │   Bootloader    │  (Optional, 16-32KB)
+0x08004000  ├─────────────────┤
+            │                 │
+            │   Application   │
+            │     Firmware    │  (32-64KB)
+            │                 │
+0x0800F000  ├─────────────────┤
+            │    Settings     │  (4KB)
+0x08010000  └─────────────────┘
+```
+
+**Bootloader:**
+- Factory DFU or custom bootloader
+- Allows firmware updates without programmer
+- Size varies by device (0-32KB)
+
+**Application:**
+- Main firmware code
+- Compressed translations
+- Font data
+
+**Settings:**
+- User preferences
+- Calibration data
+- Stored at fixed flash address
+- CRC protected
+
+### RAM Usage
+
+**FreeRTOS Heap:**
+- Task stacks
+- Queue buffers
+- Semaphores and mutexes
+
+**Stack Sizes:**
+- PID Task: 512 bytes (512 / 2 words)
+- UI Task: Varies by display size
+- Movement Task: 256 bytes
+
+**Static Allocations:**
+- Display framebuffer
+- ADC sample buffers
+- Translation string buffers
+
+## Build System
+
+### Makefile Structure
+
+**Top Level:** `Makefile`
+- Docker integration
+- Documentation generation
+- Bulk builds for all models
+
+**Source Level:** `source/Makefile`  
+- Device-specific builds
+- Language variants
+- Multi-language builds
+
+### Build Targets
+
+Single language:
+```bash
+make firmware-EN model=Pinecil
+```
+
+Multi-language:
+```bash
+make firmware-multi_European model=Pinecil
+```
+
+All variants:
+```bash
+bash build.sh
+```
+
+### Optimization Flags
+
+Compiler flags optimized for size and performance:
+
+```makefile
+OPTIM=-Os                             # Optimize for size
+      -flto=auto                      # Link-time optimization  
+      -ffunction-sections             # Enable dead code elimination
+      -fdata-sections
+      -finline-functions              # Aggressive inlining
+      -ffast-math                     # Fast floating point
+```
+
+## Safety Features
+
+### Watchdog Timer
+
+Independent watchdog prevents firmware hangs:
+- Reset if not fed regularly
+- Fed by PID thread
+- Ensures system responsiveness
+
+### Voltage Monitoring
+
+Undervoltage lockout (UVLO):
+- Continuous input voltage monitoring
+- Heater disabled if voltage too low
+- Prevents brownout and component damage
+
+### Temperature Limits
+
+Hard-coded safety limits:
+- Maximum 450°C setpoint
+- Device-specific tip limits
+- Overheat detection
+
+### Thermal Runaway Protection
+
+Multiple detection methods:
+- Sensor stuck detection
+- Runaway heating detection  
+- ADC saturation checks
+- Automatic heater cutoff
+
+## Inter-Thread Communication
+
+### Task Notifications
+
+FreeRTOS task notifications for efficiency:
+
+```cpp
+// Notify PID thread from ADC IRQ
+vTaskNotifyGiveFromISR(pidTaskNotification, &xHigherPriorityTaskWoken);
+
+// Wait for notification in PID thread
+ulTaskNotifyTake(pdTRUE, timeout);
+```
+
+### Shared Variables
+
+Critical shared variables:
+
+```cpp
+volatile TemperatureType_t currentTempTargetDegC;  // Temperature setpoint
+uint8_t heaterThermalRunawayCounter;               // Safety counter
+int32_t powerSupplyWattageLimit;                   // Power limit
+```
+
+Marked `volatile` for thread safety.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="BSP Layer" icon="microchip" href="/development/bsp">
+    Deep dive into BSP implementation
+  </Card>
+  <Card title="PID Control" icon="gauge" href="/development/pid-control">
+    Understanding temperature control algorithms
+  </Card>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Build the firmware yourself
+  </Card>
+  <Card title="Porting Guide" icon="plus" href="/development/porting">
+    Add support for new hardware
+  </Card>
+</CardGroup>

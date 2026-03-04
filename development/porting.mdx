@@ -1,0 +1,368 @@
+---
+title: Porting to New Hardware
+description: Guide for adding support for new soldering iron hardware
+---
+
+This guide covers the requirements and process for adding support for new soldering iron or hot plate hardware to IronOS.
+
+## Hardware Requirements
+
+Before requesting or attempting to port IronOS to new hardware, verify that the device meets these requirements.
+
+### Hard Requirements
+
+These requirements **must** be met for IronOS support:
+
+1. **Supported Processor**
+   - ARM Cortex series (Cortex-M0, M3, M4, M7)
+   - RISC-V processor
+   - Must have a FreeRTOS port available
+   - 8051 and similar processors are **not supported**
+
+2. **Flash Memory**
+   - Minimum: 64KB (can work with less if DFU bootloader is present)
+   - Recommended: 128KB or larger
+   - Larger flash enables multi-language firmware and additional features
+
+3. **RAM**
+   - Minimum: 16KB
+   - More RAM allows for better buffering and features
+
+4. **Heating Element Control**
+   - One or more controllable heating elements
+   - Temperature sensor for each heating element
+   - For thermocouples: cold junction compensation sensor required
+
+5. **Firmware Update Mechanism**
+   - User must be able to update firmware without opening the device
+   - USB DFU, custom bootloader, or similar mechanism
+
+6. **Known Pinmap**
+   - Complete pinout documentation for the microcontroller
+   - Understanding of peripheral connections (USB-PD IC, power control, etc.)
+   - Access to schematics (open source strongly preferred)
+
+### Soft Requirements
+
+These are strongly preferred but not strictly required:
+
+1. **Power Delivery**
+   - USB-PD strongly preferred over Quick Charge
+   - Quick Charge only devices are considered legacy
+   - Will have lower priority for support
+
+2. **Documentation**
+   - Open source hardware or published schematics **strongly preferred**
+   - Increases likelihood of support
+   - Helps community contribute fixes and improvements
+
+3. **Vendor Support**
+   - Responsive vendor support helps dramatically
+   - Willingness to answer technical questions
+   - Community-friendly manufacturers are prioritized
+
+4. **Hardware PWM**
+   - Hardware PWM for tip control is nice to have
+   - Not essential (can be done in software)
+
+5. **Processor Selection**
+   - Strong preference against STM32 clones
+   - Genuine STM32, GD32, or other established MCUs preferred
+
+### Planned Future Features
+
+These features are planned but not yet implemented:
+
+- Color screens
+- More than 2 buttons or encoder inputs  
+- WiFi/Zigbee/networking capabilities
+
+Devices with these features may be supported, but the features may not be utilized initially.
+
+## Device Types
+
+IronOS is designed primarily for soldering irons, but has expanded to similar devices:
+
+- **Soldering Irons** - Primary target (TS100, TS80, Pinecil, etc.)
+- **Hot Plates** - Similar thermal control (MHP30)
+- **Desoldering Guns** - Compatible device type
+
+**Not supported:**
+- Reflow ovens (different use case)
+- Heat guns (safety considerations)
+- Devices without temperature feedback
+
+## Porting Process
+
+### 1. Gather Hardware Information
+
+Collect the following information:
+
+- Microcontroller model and specifications
+- Complete pinout (which GPIO pins connect to what)
+- Power supply design (DC jack, USB-PD, QC)
+- Display type and interface (SPI, I2C)
+- Temperature sensing method (thermocouple, thermistor)
+- Heating element control method (MOSFET, transistor)
+- Accelerometer/motion sensor (if present)
+- Button configuration
+
+### 2. Create BSP Directory
+
+Create a new Board Support Package directory:
+
+```
+source/Core/BSP/YourDevice/
+├── configuration.h     # Device-specific configuration
+├── IRQ.cpp            # Interrupt handlers
+├── Setup.cpp          # Hardware initialization
+├── Vendor/            # HAL/SDK files
+├── BSP.cpp            # Hardware abstraction implementation
+└── README.md          # BSP documentation
+```
+
+### 3. Implement BSP Functions
+
+The BSP must implement these key functions:
+
+#### Hardware Initialization
+
+```cpp
+// Called before FreeRTOS starts
+void preRToSInit();
+
+// Called after FreeRTOS starts  
+void postRToSInit();
+```
+
+#### I2C Communication
+
+```cpp
+// I2C read operation
+bool I2C_Read(uint8_t address, uint8_t *buffer, uint8_t length);
+
+// I2C write operation
+bool I2C_Write(uint8_t address, uint8_t *buffer, uint8_t length);
+```
+
+#### PWM Control
+
+```cpp
+// Set tip heating PWM duty cycle
+void setTipPWM(uint8_t pulse, bool forceOff);
+
+// Set tip power in x10 watts
+void setTipX10Watts(uint16_t x10watts);
+```
+
+#### Temperature Sensing
+
+```cpp
+// Read tip temperature in °C
+uint16_t getTipRawTemp(uint8_t sample);
+
+// Read cold junction temperature (for thermocouples)
+uint16_t getTipColdJunctionTemp();
+```
+
+#### IRQ Handlers
+
+Connect hardware interrupts to firmware callbacks:
+- ADC conversion complete
+- Timer interrupts for PID loop
+- Button press interrupts
+- USB/power delivery events
+
+### 4. Configure Device Parameters
+
+In `configuration.h`, define device-specific parameters:
+
+```cpp
+// Model identification
+#define MODEL_TS100 1
+
+// Hardware configuration  
+#define TIP_THERMAL_MASS     120  // x10 J/°C
+#define TIP_THERMAL_INERTIA  10   // Thermal inertia factor
+#define TIP_RESISTANCE       80   // x10 ohms
+
+// PID control settings
+#define PID_TIM_HZ          8     // PID loop frequency (Hz)
+#define PID_POWER_LIMIT     70    // Max PWM percentage
+
+// Temperature limits
+#define MIN_TEMP_C          10    // Minimum temp in °C
+#define MAX_TEMP_C          450   // Maximum temp in °C
+
+// Display configuration  
+#define OLED_WIDTH          96    // Display width in pixels
+#define OLED_HEIGHT         16    // Display height in pixels
+```
+
+### 5. Add Makefile Support
+
+Update `source/Makefile` to include your device:
+
+```makefile
+ALL_YOUR_MODELS=YourDevice
+ALL_MODELS=$(ALL_MINIWARE_MODELS) $(ALL_PINECIL_MODELS) $(ALL_YOUR_MODELS)
+
+ifeq ($(model),$(filter $(model),$(ALL_YOUR_MODELS)))
+$(info Building for YourDevice)
+
+DEVICE_BSP_DIR=./Core/BSP/YourDevice
+LDSCRIPT=./Core/BSP/YourDevice/linker_script.ld
+
+# Compiler flags
+CPUFLAGS=-mcpu=cortex-m3 -mthumb -mfloat-abi=soft
+
+# Device defines
+DEV_GLOBAL_DEFS=-DSTM32F103xB -DUSE_HAL_DRIVER
+
+flash_size=64k
+bootldr_size=0x4000
+DEVICE_DFU_ADDRESS=0x08004000
+DEVICE_DFU_VID_PID=0x1209:0xDB42
+endif
+```
+
+### 6. Test Hardware Functions
+
+Test each BSP function independently:
+
+1. **Power-on** - Device boots without errors
+2. **Display** - OLED shows boot screen
+3. **Buttons** - Input is recognized
+4. **Temperature sensing** - Reads reasonable values
+5. **Heating control** - Tip heats when commanded
+6. **Motion detection** - Accelerometer works (if present)
+7. **Power negotiation** - USB-PD/QC works correctly
+
+### 7. Calibrate Thermal Model
+
+The thermal model needs calibration for accurate temperature control:
+
+1. **Measure tip thermal mass** - Heat capacity of the tip assembly
+2. **Measure thermal inertia** - How quickly the tip responds  
+3. **Test PID parameters** - Tune for stable temperature control
+4. **Validate temperature accuracy** - Compare to external thermometer
+
+### 8. Submit for Review
+
+Once the port is working:
+
+1. Test thoroughly on actual hardware
+2. Verify all features work correctly
+3. Document any quirks or limitations
+4. Submit a pull request with:
+   - Complete BSP implementation
+   - Updated Makefile
+   - Documentation for the new device
+   - Photos/videos of it working (helpful)
+
+## Example: Device Port Request
+
+When requesting support for a new device, provide this information:
+
+```
+Device Name: SuperIron Pro
+Device Type: Soldering Iron
+Approximate Price: $45 USD
+Purchase Locations: Amazon, AliExpress
+
+### Hardware Details
+
+Microcontroller: STM32F103C8T6
+Flash Size: 64KB (built-in)
+RAM: 20KB
+Microcontroller Pinout: [link to documentation]
+Device Type: Soldering Iron
+
+### Requirements Checklist
+- [x] Meets hard requirements  
+- [x] Meets soft requirements
+
+### Features
+- [x] USB-PD power delivery
+- [ ] USB-QC (Quick Charge)
+- [ ] DC barrel jack input
+- [ ] Bluetooth connectivity
+
+### Additional Info
+- Open source hardware: Yes [link to repo]
+- Schematics available: Yes [link]
+- Vendor responsive: Yes
+```
+
+## BSP Examples
+
+Refer to existing BSP implementations:
+
+- `Core/BSP/Miniware/` - STM32F103 based devices (TS100, TS80)
+- `Core/BSP/Pinecil/` - GD32VF103 RISC-V device
+- `Core/BSP/Pinecilv2/` - BL702 RISC-V device  
+- `Core/BSP/MHP30/` - Hot plate variant
+- `Core/BSP/Sequre/` - Recent STM32 port example
+
+Each BSP shows different approaches to:
+- Different MCU architectures
+- Various display sizes
+- Different power delivery methods
+- Temperature sensing methods
+
+## Common Porting Challenges
+
+### Flash Space Limitations
+
+If flash is tight:
+- Build single-language firmware only
+- Use compressed multi-language builds
+- Disable debug features
+- Optimize compiler flags for size (`-Os`)
+
+### Temperature Sensor Noise
+
+For noisy temperature readings:
+- Increase ADC filtering in `TipThermoModel`
+- Adjust `TIP_THERMAL_INERTIA` value
+- Add hardware filtering (capacitor on ADC input)
+- Increase ADC sample averaging
+
+### PWM Frequency Issues  
+
+If tip heating is unstable:
+- Verify PWM frequency is appropriate (10-100 Hz typical)
+- Check if hardware PWM is available
+- Ensure MOSFET can handle switching frequency
+- Add deadtime if using complementary PWM
+
+### Display Issues
+
+For display problems:
+- Verify I2C/SPI timing
+- Check display initialization sequence
+- Confirm display dimensions in configuration
+- Test with known-good display first
+
+## Resources
+
+- [Existing BSP Implementations](https://github.com/Ralim/IronOS/tree/master/source/Core/BSP)
+- [Hardware Requirements Discussion](https://github.com/Ralim/IronOS/discussions)
+- [Configuration Header Reference](https://github.com/Ralim/IronOS/blob/master/source/Core/BSP/Miniware/configuration.h)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="BSP Documentation" icon="microchip" href="/development/bsp">
+    Learn about the BSP layer in detail
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">  
+    Understand firmware architecture
+  </Card>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Build firmware for your device
+  </Card>
+  <Card title="PID Control" icon="gauge" href="/development/pid-control">
+    Understanding temperature control
+  </Card>
+</CardGroup>

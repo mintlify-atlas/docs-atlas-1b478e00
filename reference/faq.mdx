@@ -1,0 +1,277 @@
+---
+title: Frequently Asked Questions
+description: Common questions and answers about IronOS firmware
+---
+
+This page answers common questions about using IronOS firmware on your soldering device.
+
+## General Questions
+
+### What is IronOS?
+
+IronOS is open source flexible firmware for soldering hardware. Originally conceived as an alternative firmware for the TS100, it has evolved into a complex soldering hardware control firmware that supports multiple devices including Pinecil, TS100, TS80, TS80P, TS101, MHP30, and Sequre devices.
+
+### Which devices are supported?
+
+IronOS supports the following devices:
+- Pinecil V1 and V2
+- Miniware TS100, TS80, TS80P, TS101
+- Miniware MHP30 (reflow plate)
+- Sequre S60, S60P, T55
+
+For the most up-to-date list and device-specific features, see the [supported hardware documentation](/supported-hardware).
+
+### What is the current stable version?
+
+The current stable release is **v2.23**. You can download it from the [GitHub releases page](https://github.com/Ralim/IronOS/releases).
+
+### How do I update my device?
+
+Please refer to the flashing guide specific to your device. Each device has different update procedures:
+- [Pinecil V1 Flashing Guide](/flashing/pinecil-v1)
+- [Pinecil V2 Flashing Guide](/flashing/pinecil-v2)
+- [TS100 Flashing Guide](/flashing/ts100)
+- [TS80/TS80P Flashing Guide](/flashing/ts80p)
+- [MHP30 Flashing Guide](/flashing/mhp30)
+
+### Can I change settings without a computer?
+
+Yes! All settings in IronOS are adjustable on the device itself through the onscreen menu. A computer is not required to change any setting.
+
+### What languages are supported?
+
+Currently **31** languages are supported. When downloading firmware, note the language code in the file name. Multi-lingual firmware combinations are available for some devices like Pinecil.
+
+## Hardware Questions
+
+### My device shows an X where the iron should be. What does this mean?
+
+This indicates that the firmware cannot detect the tip. Try:
+1. Remove the tip screw and tip
+2. Gently reinstall both, ensuring the tip is seated all the way back
+3. If the issue persists, see the [hardware issues documentation](/troubleshooting/hardware-problems)
+
+### What is the "Tip Shorted" warning?
+
+This warning appears on devices that support tip resistance detection (TS101 and PinecilV2). It indicates the tip resistance is abnormally low, which could indicate:
+- A failed driver MOSFET
+- A failed tip
+
+Heating is disabled to protect the iron from damage. Manually measure your tip resistance (should be 6-8 ohms) to diagnose the issue.
+
+### My tip temperature reads too high when cold. What should I check?
+
+Check these values in the Debug menu:
+- **RTip**: Raw tip reading in μV. Should be around 700-1000 for larger tips, ~1500 for smaller TS80 tips
+- **CHan**: Handle temperature in °C × 10. For example, 29°C should read as 290
+
+If either value is out of spec, you may have hardware issues with the Op-Amp, MOSFET, or temperature sensor.
+
+### My display is blank or shows dots. What should I do?
+
+First, try to heat the tip by pressing the front button to see if heating works. If yes:
+1. The OLED display cable to the main PCB may have poor soldering
+2. Try reflowing the pins for the OLED
+3. Check pull-up resistors on the SDA and SCL pins
+
+If the display is completely dead, you may need to replace the OLED. For TS100/TS80/TS80P, look for: `OLED 0.69 inch / 14 pins / 96 x 16 pixels / 9616TSWC / I2C IIC`
+
+### What tips are compatible?
+
+- **TS100/Pinecil/TS101**: T100 and Hakko T12 style tips (~8 ohms). Pinecil also supports shorter custom tips (~6.2 ohms)
+- **TS80/TS80P**: Custom TS80 tips (~4.5 ohms)
+- **S60**: JBC tips
+- **MHP30/T55**: Reflow plate (no tips)
+
+### Can I use 4 ohm tips?
+
+v2.23+ adds experimental 4 ohm tip support for Pinecil 1/2 and TS10x. Note this is **at your own risk** - not all hardware is designed for this.
+
+## Power Supply Questions
+
+### What power supply should I use?
+
+- **USB-PD**: Highly recommended where possible. Allows the iron to know supply limitations and negotiate appropriate voltage
+- **QC (Quick Charge)**: Supported on compatible devices
+- **DC Barrel**: Use highest voltage your device supports (typically 20-24V)
+
+Avoid low voltages - power at the tip is a function of supplied voltage. Higher voltage = better performance.
+
+### Why does my iron select a lower voltage than my power supply maximum?
+
+The iron cannot control its peak power draw. When using USB-PD, it may select a lower voltage to prevent your power supply from failing due to overcurrent.
+
+### What is USB-PD EPR and should I enable it?
+
+EPR (Extended Power Range) allows operation at 28V for higher wattage. It is **disabled by default** due to safety concerns. To enable, set "PD Mode" in Power Settings to "Safe" or "Default".
+
+### My power bank keeps shutting off. What should I do?
+
+Enable "Power Pulse" in Advanced Settings. This briefly turns on the heater to draw power and keep power banks awake. Adjust:
+- **Power pulse intensity**: How much power to draw
+- **Power pulse delay**: Time between pulses (longer = less tip heating)
+- **Power pulse duration**: How long the pulse lasts
+
+## Operation Questions
+
+### How do I enter soldering mode?
+
+From the home screen, press the button nearest the tip (`+/A`). The iron will immediately start heating.
+
+### What is boost mode?
+
+Boost mode temporarily overrides the set temperature to a higher value. Hold the front button (`+/A`) during soldering to activate. Useful for large joints requiring more heat.
+
+Set the boost temperature in Soldering Settings.
+
+### How do I lock the buttons?
+
+In soldering mode, press and hold both buttons simultaneously. This prevents accidental button presses. You can optionally allow boost mode while locked via settings.
+
+### What is sleep mode?
+
+After a period without movement (default timing adjustable), the iron automatically lowers to sleep temperature (default 150°C). This reduces oxidation and extends tip life. Pick up or move the iron to wake it.
+
+### What is the Hall Effect sensor feature?
+
+Pinecil has an unpopulated footprint for a Hall Effect sensor (Si7210-B-00-IV). When installed with a magnet on your stand, Pinecil automatically enters sleep when placed in the stand. Sensitivity is adjustable (0=off, 1-9). See the [Hall Sensor documentation](/hardware/hall-sensor) for details.
+
+### What is Profile Mode?
+
+Profile Mode (MHP30 only) allows you to define and run heating profiles like a proper reflow device. Access by long-holding the `+/A` button. Configure phases, temperatures, and durations in settings.
+
+## Bluetooth Questions (Pinecil V2)
+
+### Does Pinecil V2 support Bluetooth?
+
+Yes, Pinecil V2 has Bluetooth Low Energy (BLE) support for reading telemetry and adjusting settings remotely using tools like PineSAM or PineTool.
+
+### Is Bluetooth enabled by default?
+
+No. Starting with v2.23, Bluetooth is **disabled by default** due to security concerns.
+
+### How do I enable Bluetooth?
+
+1. Go to Settings menu
+2. Press `-/B` four times to scroll to "Advanced settings"
+3. Press `+/A` to open submenu
+4. Press `+/A` to toggle/enable Bluetooth
+5. Press and hold `-/B` for 5+ seconds to exit Settings
+
+### What can I do with Bluetooth?
+
+You can:
+- Read live telemetry (temperature, voltage, power, etc.)
+- Adjust settings remotely
+- View firmware version and device information
+
+Refer to the [Bluetooth documentation](/advanced/bluetooth) for technical details.
+
+## Calibration Questions
+
+### Do I need to calibrate my iron?
+
+Most users do not need calibration. Consider calibration only if:
+- Your temperature readings seem significantly off
+- You get cutoff voltage warnings with a good power supply
+- Your tips are wearing out prematurely
+
+### How do I calibrate input voltage?
+
+1. Measure input voltage with a multimeter
+2. Connect power to your iron
+3. Enter Settings → Advanced Settings → Calibrate Input Voltage
+4. Use front/back buttons to adjust displayed voltage to match measurement
+5. Press both buttons to save and exit
+
+### How do I calibrate Cold Junction Compensation (CJC)?
+
+**Only calibrate if the temperature difference between target and measured is greater than 5°C.**
+
+1. Connect power to your device
+2. Go to Advanced Settings → "Calibrate CJC at next boot" and enable it
+3. Exit settings menu
+4. **Unplug device and wait until tip and handle are at room temperature**
+5. Power on the device (keep it on the desk)
+6. Device shows "calibrating...." then "Calibration done!"
+
+The calibration only occurs if:
+- Tip is installed
+- Temperature difference between tip and handle is less than 10°C
+
+### Should I calibrate when changing tip lengths?
+
+No, changing tip lengths does not necessarily require calibration. Check first that your tips are not defective:
+- Pinecil/TS100 short tips: 6.2Ω
+- Pinecil/TS100 long tips: 8Ω
+- TS80/P: ~4.5Ω
+
+## Settings Questions
+
+### How do I navigate the settings menu?
+
+- **Back button (`-/B`)**: Scrolls through main options and submenus
+- **Front button (`+/A`)**: Enters submenus or changes values
+- Wait on any setting for 3 seconds to see a description scroll across the screen
+- Long hold `-/B` to exit and return to home screen
+
+### How do I reset to default settings?
+
+Go to Advanced Settings → "Restore default settings" and confirm with the `+/A` button. This resets all settings to defaults but does NOT erase custom boot logos.
+
+### Can I change the temperature units?
+
+Yes, in User Interface settings, you can switch between Celsius (°C) and Fahrenheit (°F).
+
+### Can I swap the button functions?
+
+Yes! In User Interface settings:
+- **Swap +/- keys**: Reverses which button increases/decreases temperature
+- **Swap A/B keys**: Reverses button assignments in Settings menu (added in v2.23)
+
+### What is the difference between detailed idle and detailed soldering screens?
+
+Detailed views use text instead of graphics to show more information:
+- **Detailed idle screen**: Shows status with extra details on the home screen
+- **Detailed soldering screen**: Text-based view during soldering with more information
+
+These are useful if you want more data at a glance.
+
+## Troubleshooting
+
+### My iron won't heat up. What should I check?
+
+1. Ensure tip is properly installed and seated
+2. Try reflashing the firmware
+3. Check that heating works by entering soldering mode
+4. If no heating, you may have a hardware issue (MOSFET or connection)
+
+### The accelerometer is not detected. What does this mean?
+
+- Your device may have a new accelerometer model not yet supported
+- There may be a soldering issue with the accelerometer (try reflowing)
+
+### My iron heats when NOT in heating mode. What should I do?
+
+⚠️ **DISCONNECT YOUR TIP IMMEDIATELY** ⚠️
+
+You likely have a blown MOSFET or shorted pin. Check the MOSFET and its driver transistor. The firmware will not enable the tip until soldering mode is active.
+
+### Where can I get more help?
+
+- [IronOS GitHub Discussions](https://github.com/Ralim/IronOS/discussions)
+- [IronOS GitHub Issues](https://github.com/Ralim/IronOS/issues)
+- [Pinecil Community Chat](https://wiki.pine64.org/wiki/Pinecil#Community_links) (for Pinecil devices purchased from official stores)
+
+## Contributing
+
+### How can I contribute?
+
+- Submit translations: Translation files are stored as JSON in the `Translations` folder
+- Report bugs: Use GitHub Issues
+- Submit feature requests: Use GitHub Discussions
+- Contribute code: Pull requests are welcome
+
+### Can I support the project financially?
+
+Yes! You can support the developer at [PayPal](https://paypal.me/RalimTek). All contributions help fuel development.

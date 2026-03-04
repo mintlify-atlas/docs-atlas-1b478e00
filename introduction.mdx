@@ -1,0 +1,143 @@
+---
+title: Introduction to IronOS
+description: Open source flexible firmware for soldering hardware with advanced features and multi-language support
+---
+
+# IronOS - Open Source Flexible Firmware for Soldering Hardware
+
+IronOS is a feature-rich, open source firmware for smart soldering hardware. Originally conceived as an alternative firmware for the TS100, this firmware has evolved into a comprehensive soldering hardware control system supporting multiple devices.
+
+<Note>
+This repository was formerly known as TS100 - it's the same great code, just with more supported devices.
+</Note>
+
+## Overview
+
+The firmware implements all of the standard features of a "smart" soldering iron, with numerous extras and tweaks. IronOS is considered feature complete for daily use, but feature suggestions are always welcome.
+
+<CardGroup cols={2}>
+  <Card title="31 Languages" icon="language">
+    Full support for 31 different languages with localized menus and settings
+  </Card>
+  <Card title="PID Temperature Control" icon="temperature-high">
+    Precise PID-style temperature control for consistent soldering performance
+  </Card>
+  <Card title="Power Flexibility" icon="bolt">
+    Support for DC, Quick Charge (QC), USB-PD, and EPR power sources
+  </Card>
+  <Card title="Customizable" icon="sliders">
+    All settings exposed in an intuitive onscreen menu system
+  </Card>
+</CardGroup>
+
+## Power Source Support
+
+IronOS intelligently manages different power delivery methods:
+
+- **USB-PD (Power Delivery)**: Negotiates appropriate voltage and power with PD-capable chargers
+- **Quick Charge (QC)**: Supports QC 2.0/3.0 protocols for compatible power banks
+- **DC Input**: Direct DC power support with configurable voltage ranges
+- **Battery Protection**: Cutoff voltage settings for battery-powered operation (TS100 & Pinecil)
+
+<Warning>
+EPR/PPS with 28V support is disabled by default due to safety concerns. Enable it in Power settings > PD Mode if needed.
+</Warning>
+
+## Key Features
+
+<Accordion title="Temperature Management">
+  - PID-style iron temperature control
+  - Boost mode for temporarily raising temperature during soldering
+  - Adjustable sleep temperature (default 150°C)
+  - Automatic sleep with selectable sensitivity
+  - Adjustable & tweakable motion wake support
+</Accordion>
+
+<Accordion title="Power Management">
+  - Voltage lower limit for Lithium batteries (TS100/Pinecil)
+  - 18W or 24W settings for power banks (TS80)
+  - Automatic PD negotiation with QC fallback (TS80P)
+  - Support for all 3 power modes: PD, QC, DC (Pinecil)
+  - USB-PD EPR for 28V operation (Pinecil V2)
+  - Battery charge level indicator when using LiPo cells
+  - Power bank operating voltage display
+</Accordion>
+
+<Accordion title="Display & Interface">
+  - Improved readability fonts supporting multiple languages
+  - Automatic LCD rotation based on orientation
+  - Custom boot up logo support (edited on computer and flashed like firmware)
+  - Motion detection for automatic wake/sleep
+  - Intuitive two-button control system
+</Accordion>
+
+<Accordion title="Advanced Features">
+  - Hardware features utilized for improved reliability
+  - Bluetooth Low Energy support (Pinecil V2)
+  - Profile mode for reflow soldering (MHP30)
+  - Hall effect sensor support for stand detection (Pinecil)
+  - Debug menu for troubleshooting
+</Accordion>
+
+## Basic Control
+
+All supported devices are controlled by two buttons:
+
+- **+/A button**: Near the front/tip (for irons) or left side (for plates)
+- **-/B button**: Near the back/USB end (for irons) or right side (for plates)
+
+### Button Actions
+
+| Location | Action | Function |
+|----------|--------|----------|
+| Home screen | Short press +/A | Enter soldering mode |
+| Home screen | Short press -/B | Enter settings menu |
+| Home screen | Long press +/A | Temperature adjust mode (before heating) |
+| Home screen | Long press -/B | Debug menu |
+| Soldering | Short press +/A or -/B | Adjust temperature |
+| Soldering | Long press +/A | Boost mode |
+| Soldering | Long press -/B | Return to home (stop heating) |
+
+<Note>
+Button presses are defined as: **short** (~1 second) or **long** (more than 1 second)
+</Note>
+
+## Current Release
+
+The current stable release is **v2.23**. Development builds are available from the `dev` branch for those who want the latest features.
+
+<CardGroup cols={2}>
+  <Card title="Download Firmware" icon="download" href="https://github.com/Ralim/IronOS/releases/latest">
+    Get the latest stable release for your device
+  </Card>
+  <Card title="View Changelog" icon="clock-rotate-left" href="https://ralim.github.io/IronOS/History">
+    See what's new in each release
+  </Card>
+</CardGroup>
+
+## Important Notes
+
+<Warning>
+**USB Port Limitations**: This firmware does NOT support the USB port for changing settings while running. All configuration is done through the onscreen menu only.
+</Warning>
+
+<Note>
+**Custom Logos**: Boot logos and animations are no longer included in the repository. They are edited on a computer and flashed in the same manner as firmware. [Read the logo documentation](https://ralim.github.io/IronOS/Logo/) for more information.
+</Note>
+
+## Community & Support
+
+IronOS is an active open source project with contributions from developers worldwide. The project welcomes:
+
+- Bug reports and feature requests via GitHub issues
+- Translation contributions (stored as JSON files in the Translations folder)
+- Code contributions via pull requests
+- Community discussion and support
+
+## License
+
+The code created by the community is covered by the **GNU GPLv3** license unless noted elsewhere. Other components such as FreeRTOS and USB-PD have their own licenses.
+
+<Card title="Next Steps" icon="arrow-right" href="/getting-started">
+  Ready to install IronOS on your device? Check out the Getting Started guide
+</Card>

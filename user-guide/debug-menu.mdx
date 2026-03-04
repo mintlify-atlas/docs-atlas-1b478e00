@@ -1,0 +1,280 @@
+---
+title: Debug Menu
+description: Access diagnostic information and troubleshoot your IronOS device
+---
+
+The debug menu provides detailed diagnostic information about your device's operation. This is useful for troubleshooting and verifying proper functionality.
+
+## Accessing Debug Menu
+
+From the standby/idle screen:
+
+1. Long hold the `-/B` button (rear button)
+2. Press `+/A` to scroll through debug screens
+3. Press `-/B` again to exit
+
+<Note>
+The debug menu has no fancy GUI animations - it's designed to be simple and informative.
+</Note>
+
+## Firmware Version
+
+Displayed on every debug screen at the top.
+
+**Format**: `vX.YYN.[ZZZZZZZZ]`
+
+| Component | Description |
+|-----------|-------------|
+| **X** | Major version |
+| **Y** | Minor version (two digits) |
+| **N** | Build type (see table below) |
+| **Z** | Short commit ID (8 characters, git builds only) |
+
+### Build Type Codes
+
+| Code | Meaning |
+|------|----------|
+| **R** | Git **r**elease tag vXX.YY |
+| **T** | Git release **t**ag (non-standard version) |
+| **D** | Git **d**ev branch |
+| **B** | Git custom **b**ranch |
+| **E** | Git d**e**tached commit |
+| **G** | Other **g**it-related build |
+| **C** | GitHub **C**I pull request build |
+| **H** | Non-git build (tarball or **h**omebrew) |
+| **S** | **S**pecial configuration |
+| **V** | **V**ery special configuration |
+
+### Examples
+
+- `v2.22H` - Release 2.22 built locally from tarball
+- `v2.22D.1A2B3C4D` - Development version 2.22 from dev branch, commit 1A2B3C4D
+- `v2.22R.5E6F7G8H` - Official release 2.22 tagged as v2.22, commit 5E6F7G8H
+
+## Debug Information Screens
+
+Scroll through these with the `+/A` button.
+
+### Timestamp
+
+Firmware compilation date and time.
+
+**Format**: `YYYYMMDD HHMMSS`
+
+**Example**: `20230701 213456` = July 1st, 2023 at 9:34:56 PM
+
+### ID
+
+Device identification and serial number.
+
+- **Pinecil V1**: All show same ID (MCU model number)
+- **Pinecil V2**: Unique ID per device (verify authenticity at [pinecil.pine64.org](https://pinecil.pine64.org/))
+- Used for checking if iron is authentic
+
+### ACC
+
+Accelerometer model detected.
+
+**Possible values**:
+- MMA8652
+- LIS2DH12
+- BMA223
+- MSA301
+- SC7A20
+- **None** - Running without movement detection
+- **Scanning** - Still searching I2C bus
+
+### PWR
+
+Current power source. May change during boot as sources are negotiated.
+
+| Display | Description |
+|---------|-------------|
+| **DC** | DC input (direct/dumb power) |
+| **QC** | Quick Charge 2/3 negotiation |
+| **PD W. VBus** | USB-PD with VBus connected |
+| **PD No VBus** | USB-PD without VBus connected |
+
+<Note>
+**PD No VBus** on Pinecil V1 indicates late model or successful VBus trace mod (allows 24V DC barrel safely).
+</Note>
+
+### Vin
+
+Input voltage from internal ADC. Use this to verify voltage reading accuracy.
+
+### Tip C
+
+Current tip temperature in °C. Compare with RTip for temperature processing performance.
+
+### Han C
+
+Handle/Cold Junction Compensation (CJC) temperature in °C.
+
+**Normal range**: 20-40°C (depends on room temperature and power-on duration)
+
+<Warning>
+Extremely high CHan values indicate temperature sensor malfunction.
+</Warning>
+
+### Max C
+
+Maximum temperature (°C) the system estimates it can reliably measure.
+
+Dependent on handle temperature and other factors. Increases during use as device warms up.
+
+### UpTime
+
+Time since device powered on.
+
+**Units**: Deciseconds (ds)
+
+**Example**: 600 ds = 1 minute
+
+### Move
+
+Timestamp of last detected movement.
+
+Should update to match UpTime when device is moved. Used to verify movement detection.
+
+### Tip Res
+
+Tip resistance currently in use.
+
+- **Pinecil V2**: Auto-detected at boot
+- Tip must be installed before boot for accurate reading
+
+### Tip R
+
+Raw tip reading in μV.
+
+**Normal ranges** (when cool):
+- Large tips: 700-1000 μV
+- TS80 small tips: ~1500 μV
+
+<Note>
+Tip must be installed or reading will be high/inaccurate.
+</Note>
+
+### Tip O
+
+Offset from Cold Junction Compensation calibration.
+
+**Typical values**: 700-1000 range
+
+View this after running CJC calibration to verify results.
+
+### HW G
+
+High-water mark for GUI thread stack. Shows minimum available stack headroom.
+
+<Tip>
+Explore all GUI options to hit the worst-case scenario for accurate measurement.
+</Tip>
+
+### HW M
+
+High-water mark for movement detection thread stack.
+
+### HW P
+
+High-water mark for PID thread stack.
+
+<Note>
+Smaller numbers = less headroom. These values help developers ensure thread safety.
+</Note>
+
+### Hall
+
+Magnetic field strength from hall effect sensor (Pinecil only).
+
+**Uses**:
+- Verify sensor is operational
+- Optimize magnet placement on stand
+- Higher number = stronger field
+
+See [Hall Sensor documentation](https://ralim.github.io/IronOS/HallSensor/) for details.
+
+## PD Debug Menu
+
+Special menu for inspecting USB-PD power adapters (Pinecil only).
+
+### Accessing PD Debug Menu
+
+1. Long hold the **front button (`+`)** while booting device
+2. Press `+` to cycle through PD information screens
+3. Press `-` or unplug to exit
+
+<Note>
+Only works with USB-PD power sources. QC and DC sources show "PD State 6" (waiting for source).
+</Note>
+
+### Information Displayed
+
+**First screen**: PD negotiation stage number
+
+**State 12** = Successful negotiation
+
+**Subsequent screens**: PD proposals for voltage and current offered by the power supply
+
+### VBus Status Check
+
+**Purpose**: Determine if Pinecil V1 needs the 24V DC barrel modification.
+
+1. Enter PD Debug menu
+2. Wait for negotiation (state > 5)
+3. Check display:
+   - **`[PD No VBus]`** - Late model V1, no mod needed, 24V safe
+   - **`[VBus]`** - Early model V1, mod required for 24V safety
+
+### Pinecil V1 VBus Modification
+
+<Warning>
+Attempt this modification at your own risk. Incorrect trace cutting can damage your device.
+</Warning>
+
+**Background**: Early Pinecil V1 models have VBus connected, limiting DC barrel to 21V. Cutting a PCB trace allows safe 24V operation.
+
+**Process**:
+
+1. Use PD Debug menu to verify `[VBus]` is displayed
+2. Follow instructions in [February 2022 PINE64 Update](https://www.pine64.org/2022/02/15/february-update-chat-with-the-machine/)
+3. Carefully cut the specified trace
+4. Use alcohol to clean copper dust from gap
+5. Re-check PD Debug menu for `[PD No VBus]`
+6. Only use 24V on DC barrel after confirming `[PD No VBus]`
+
+<Tip>
+Join the [Pine64 community chat](https://wiki.pine64.org/wiki/Pinecil#Community_links) for advice before attempting the modification.
+</Tip>
+
+**Late model Pinecil V1**: Manufactured in 2022 with `[No Vbus]` already present, no modification needed.
+
+**Pinecil V2**: Released August 2022 with completely redesigned PCB. All components support 28V. No modifications needed for 24V DC barrel.
+
+## Diagnostic Use Cases
+
+### Temperature Issues
+
+1. Check **Tip C** and **Han C** for reasonable values
+2. Compare **Tip C** with set temperature
+3. Check **Tip O** offset value (typical: 700-1000)
+4. Verify **Tip R** is in normal range
+
+### Power Issues
+
+1. Check **PWR** displays correct source
+2. Verify **Vin** matches actual input voltage
+3. Use PD Debug menu to check negotiation state
+
+### Movement Detection Issues
+
+1. Check **ACC** shows sensor type (not "None")
+2. Watch **Move** timestamp update when device is moved
+3. Verify **Hall** reading changes with magnet (Pinecil)
+
+### Calibration Verification
+
+1. Run CJC calibration
+2. Check **Tip O** for new offset value
+3. Monitor **Tip C** for improved accuracy

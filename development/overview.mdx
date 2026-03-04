@@ -1,0 +1,166 @@
+---
+title: Development Overview
+description: Contributing to IronOS firmware development
+---
+
+IronOS is an open-source firmware for soldering irons and related tools. This section provides guidance for developers who want to contribute to the project or customize the firmware for their needs.
+
+## Project Structure
+
+The IronOS codebase is organized into several key directories:
+
+```
+source/
+├── Core/
+│   ├── BSP/              # Board Support Package for each device
+│   ├── Drivers/          # Hardware abstraction drivers
+│   ├── Inc/              # Header files
+│   ├── Src/              # Core source files
+│   ├── Threads/          # FreeRTOS task implementations
+│   │   ├── PIDThread.cpp # Temperature control loop
+│   │   └── UI/           # User interface logic and drawing
+│   ├── LangSupport/      # Multi-language support
+│   └── brieflz/          # Compression library
+├── Translations/         # Language translation files
+└── Makefile             # Build system
+```
+
+## Key Components
+
+### BSP Layer
+The Board Support Package provides hardware-specific implementations for each supported device. Each BSP contains:
+- Hardware initialization code
+- I2C read/write implementations
+- PWM control for tip heating
+- IRQ handlers and hardware-specific configurations
+
+### Drivers
+Drivers abstract physical hardware components:
+- OLED display controllers
+- Accelerometers
+- Button handling
+- Tip temperature response modeling
+
+### Threads
+IronOS uses FreeRTOS for task management:
+- **PID Thread** - Controls tip temperature using PID or integrator algorithms
+- **UI Thread** - Handles user interface logic and screen rendering
+- **Movement Thread** - Detects device motion for sleep/wake features
+
+### UI Architecture
+The user interface is split into two parts:
+- **Logic** (`Threads/UI/logic/`) - Handles button events and mode logic
+- **Drawing** (`Threads/UI/drawing/`) - Screen rendering, organized by display type (mono_96x16, mono_128x32, etc.)
+
+## Development Requirements
+
+### Hardware Requirements
+For devices to be supported by IronOS:
+
+**Hard Requirements:**
+1. Supported processor (ARM Cortex or RISC-V with FreeRTOS support)
+2. 64KB+ flash memory (128KB+ preferred)
+3. 16KB+ RAM
+4. Controllable heating element with temperature sensor
+5. User-accessible firmware update mechanism
+6. Known microcontroller pinmap
+
+**Soft Requirements:**
+1. USB-PD preferred over Quick Charge
+2. Open source or available schematics
+3. Vendor support for community
+4. Hardware PWM for tip control
+
+### Software Requirements
+
+**For ARM Devices (TS100, TS80, TS80P, MHP30, Sequre):**
+- `arm-none-eabi-gcc` toolchain
+- Python 3 with `bdflib` package
+- Make
+
+**For RISC-V Devices (Pinecil V1/V2):**
+- `riscv-none-elf-gcc` toolchain
+- Python 3 with `bdflib` package
+- Make
+- Docker (recommended for Pinecil V2)
+
+## Contributing
+
+### Code Style
+IronOS uses clang-format for consistent code formatting:
+
+```bash
+# Check code style
+make check-style
+
+# Auto-format code (modifies files in place)
+make style
+```
+
+### Testing
+Before submitting changes, run the test suite:
+
+```bash
+make tests
+```
+
+This runs:
+- Documentation checks
+- Shell script linting
+- Python code checks (flake8, black)
+- C/C++ code style verification
+
+### Pull Request Process
+1. Fork the repository and create a feature branch
+2. Make your changes following the code style guidelines
+3. Test your changes on actual hardware if possible
+4. Run `make tests` to verify all checks pass
+5. Submit a pull request with a clear description of changes
+6. GitHub Actions will automatically build firmware for all models
+
+## Development Tools
+
+### STM32CubeIDE
+For STM32-based devices, you can use STM32CubeIDE:
+1. Create a new project for STM32F103RCTx
+2. Remove auto-generated source code
+3. Link the contents of the `source` folder
+4. Update build settings for include paths
+5. Point to the appropriate `.ld` linker file
+
+### Command Line
+Command line development is the recommended approach and supports all device models. See the [Building from Source](/development/building) guide for detailed instructions.
+
+### Docker
+Docker provides a consistent development environment:
+
+```bash
+# Start interactive shell with all build tools
+make docker-shell
+
+# Build all firmware variants in Docker
+make docker-build
+```
+
+## Getting Help
+
+- **GitHub Issues** - Report bugs and request features
+- **GitHub Discussions** - Ask questions and share ideas
+- **Documentation** - Check the docs for guides and references
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building from Source" icon="hammer" href="/development/building">
+    Learn how to compile IronOS firmware
+  </Card>
+  <Card title="Translations" icon="language" href="/development/translations">
+    Add or update language translations
+  </Card>
+  <Card title="Porting Guide" icon="microchip" href="/development/porting">
+    Port IronOS to new hardware
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Deep dive into firmware architecture
+  </Card>
+</CardGroup>

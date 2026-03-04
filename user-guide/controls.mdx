@@ -1,0 +1,98 @@
+---
+title: Button Controls
+description: Basic button controls and operation for IronOS devices
+---
+
+IronOS devices are controlled by two buttons that can be pressed in different ways to access various functions.
+
+## Button Layout
+
+All supported devices have two buttons:
+
+- **`+/A` button**: Located near the front (closer to the tip) on irons, or on the left side on hot plates
+- **`-/B` button**: Located near the back (far from the tip) on irons, or on the right side on hot plates
+
+## Press Types
+
+| Press Type | Duration | Description |
+|------------|----------|-------------|
+| **Short press** | ~1 second | Quick tap of the button |
+| **Long press** | >1 second | Hold the button for more than one second |
+| **Both buttons** | Variable | Press and hold both buttons together |
+
+## Soldering Mode
+
+In soldering mode, the iron heats to your set temperature and maintains it.
+
+### Basic Controls
+
+| Action | Function |
+|--------|----------|
+| Short press `+/A` or `-/B` | Enter temperature adjustment screen |
+| `+/A` in temp screen | Increase temperature |
+| `-/B` in temp screen | Decrease temperature |
+| Both buttons or wait 3s | Exit temperature adjustment |
+| Long press `+/A` | Activate **Boost mode** (if enabled) |
+| Long press `-/B` or both | Exit to standby mode |
+
+### Boost Mode
+
+Boost mode temporarily increases the temperature to a preset value (configured in settings). This is useful when soldering large joints that need extra heat.
+
+- Hold the `+/A` button for >2 seconds to activate
+- Temperature increases to the boost setting
+- Release button to return to normal temperature
+- The boost temperature is set in **Soldering settings**
+
+## Standby Mode
+
+When you first power on the device, you'll see the standby screen.
+
+| Action | Function |
+|--------|----------|
+| Short press `+/A` | Enter soldering mode |
+| Long press `+/A` | Enter temperature adjustment (before heating) |
+| Short press `-/B` | Enter settings menu |
+| Long hold `-/B` | Enter debug menu |
+
+## Settings Menu Navigation
+
+| Action | Function |
+|--------|----------|
+| `-/B` | Scroll through menu options (decline/back) |
+| `+/A` | Enter submenu or change setting (accept/enter) |
+| Both buttons | Exit current menu level |
+| Long hold `-/B` | Exit to standby screen |
+| No input for 3s | Show help text for current setting |
+
+<Note>
+If you unplug the device before exiting the settings menu properly, your settings will not be saved.
+</Note>
+
+## Profile Mode (MHP30 Only)
+
+The MHP30 hot plate supports profile mode for complex heating sequences.
+
+| Action | Function |
+|--------|----------|
+| Long press `+/A` | Start configured profile |
+| Long press `-/B` or both | Exit profile mode |
+
+<Warning>
+In profile mode, you cannot manually adjust temperature or enter boost mode.
+</Warning>
+
+## Button Locking
+
+IronOS supports button locking to prevent accidental temperature changes while soldering.
+
+- Enable in **Soldering settings** → **Allow locking buttons**
+- While soldering, hold both buttons to toggle lock
+- Options: **B** (boost mode only) or **F** (full locking)
+
+## Swapping Button Functions
+
+You can customize button behavior in the settings menu:
+
+- **Swap +/- keys**: Reverses which button increases/decreases temperature
+- **Swap A/B keys**: Reverses button roles in settings menu navigation

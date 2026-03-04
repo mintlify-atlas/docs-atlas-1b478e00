@@ -1,0 +1,167 @@
+---
+title: MHP30 Flashing Guide
+description: Complete guide to flashing IronOS firmware on the MHP30 hot plate
+---
+
+## Overview
+
+The MHP30 uses a Miniware bootloader that appears as a USB storage device when in DFU mode. You can flash firmware by simply copying `.hex` files to the device.
+
+<Note>
+Flashing is completely safe. If something goes wrong, you can restore the original firmware from the [official website](https://e-design.com.cn/en/NewsDetail/4203645.html) or [mirror backup](https://github.com/Ralim/IronOS-Meta/tree/main/Firmware/Miniware).
+</Note>
+
+## Platform Support
+
+Officially, the bootloader only works under Windows (using the built-in File Explorer). Alternative file managers like Teracopy will fail.
+
+However, users have reported success on:
+- Mac (using Finder)
+- Linux (with manual mounting - see below)
+
+## Flashing Instructions (Windows)
+
+<Steps>
+  <Step title="Download firmware">
+    Download `MHP30.zip` from the [releases page](https://github.com/Ralim/IronOS/releases) and extract it
+    
+    You'll find a file named `MHP30_{Language-Code}.hex`
+  </Step>
+  
+  <Step title="Enter DFU mode">
+    Hold the button closest to the tip (the left button on the back), and plug in the USB to the computer
+  </Step>
+  
+  <Step title="Verify DFU mode">
+    The unit will appear as a USB drive and the screen will display `DFU`
+  </Step>
+  
+  <Step title="Copy firmware file">
+    Drag the `.hex` file onto the USB drive using File Explorer
+    
+    <Warning>
+    Use Windows File Explorer only. Do not use alternative file managers like Teracopy.
+    </Warning>
+  </Step>
+  
+  <Step title="Wait for completion">
+    The unit will disconnect and reconnect. The filename will change to end in `.RDY` or `.ERR`
+  </Step>
+  
+  <Step title="Verify success">
+    If the filename ends with `.RDY`, you're done!
+    
+    If it ends with `.ERR`, try copying the file again without disconnecting the device (often works on the second attempt)
+  </Step>
+  
+  <Step title="Disconnect and test">
+    Disconnect the USB and power up the device
+  </Step>
+</Steps>
+
+## Flashing on Mac
+
+<Steps>
+  <Step title="Download and extract firmware">
+    Download `MHP30.zip` from the [releases page](https://github.com/Ralim/IronOS/releases) and extract it
+  </Step>
+  
+  <Step title="Enter DFU mode">
+    Hold the left button on the back and plug in USB to your Mac
+  </Step>
+  
+  <Step title="Copy via Finder">
+    Drag the `.hex` file onto the USB drive using Finder
+  </Step>
+  
+  <Step title="Verify completion">
+    Check that the filename changes to end in `.RDY`
+  </Step>
+</Steps>
+
+## Flashing on Linux
+
+<Note>
+Linux requires manual mounting as `msdos` type. A helper script is available: [flash_ts100_linux.sh](https://raw.githubusercontent.com/Ralim/IronOS/dev/scripts/flash_ts100_linux.sh)
+</Note>
+
+### Manual Method
+
+Run as root after plugging in the device in DFU mode:
+
+```bash
+FW=mhp30.hex
+unset NAME
+eval $(lsblk -P -p -d --output NAME,MODEL|grep "DFU[ _]Disk")
+[ -z ${NAME+x} ] && exit 1  # Could not find DFU device
+umount "$NAME"
+mkdir /tmp/mntdfu
+mount -t msdos "$NAME" /tmp/mntdfu
+cp "$FW" "/tmp/mntdfu/$(basename $FW|tr a-z A-Z)"
+sync
+umount /tmp/mntdfu
+rmdir /tmp/mntdfu
+```
+
+### Linux Tips
+
+- Mount the device as `msdos` type
+- Use all-caps filenames for the firmware
+- Avoid USB hubs - plug directly into your computer
+- If it fails, try again several times without unplugging
+- Only `.RDY` extension indicates successful flashing
+
+## Troubleshooting
+
+### File Shows Extension `.ERR`
+
+This occurs when bootloader checks fail, often triggered by anti-virus software or non-Windows OS.
+
+<Steps>
+  <Step title="Keep device connected">
+    Do not disconnect the device after seeing the `.ERR` file
+  </Step>
+  
+  <Step title="Copy again">
+    Copy the same `.hex` file again
+    
+    <Warning>
+    DO NOT try to delete the old file first. Just copy the hex file again.
+    </Warning>
+  </Step>
+  
+  <Step title="Verify success">
+    The device should disconnect and reconnect with a `.RDY` file
+  </Step>
+</Steps>
+
+If this fails on Windows, try another computer. On Mac or Linux, see platform-specific instructions above.
+
+### Device Randomly Disconnects
+
+1. Check if your USB cable has data pins (test on another device). Many micro-USB cables are power-only
+2. Try other USB ports - different USB controllers may interact differently with the device
+
+## Advanced: Alternative Bootloader
+
+For advanced users familiar with USB-DFU tools:
+
+You can install an alternative bootloader that uses standard DFU protocol instead of appearing as a USB storage drive. This allows using `dfu-util` with `.bin` files.
+
+Follow the instructions at [IronOS-dfu](https://github.com/Ralim/IronOS-dfu/blob/mainline/docs/Bootloader.md).
+
+<Warning>
+Only recommended for users who understand USB-DFU. If you don't know what this means, stick with the standard bootloader method above.
+</Warning>
+
+## Advanced: SWD Programming
+
+The MHP30 supports programming via SWD (Serial Wire Debug):
+
+- On the USB-C port, `USB_D+` is shorted to `SWDIO` and `USB_D-` is shorted to `SWCLK`
+- This allows debugging without disassembly (attach while in bootloader)
+- Installing [IronOS-dfu](https://github.com/Ralim/IronOS-dfu) enables reliable flashing with `dfu-util`
+
+### Demo Mode Note
+
+The MHP30 stock firmware checks a checksum at the end of the first 8KB. If invalid, it enters "demo mode".

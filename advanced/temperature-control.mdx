@@ -1,0 +1,165 @@
+---
+title: Temperature Control
+description: PID temperature control and thermocouple measurement details
+---
+
+IronOS-powered soldering irons use a modified N-type thermocouple integrated into the tip for temperature measurement. This design creates a temperature sensor at minimal cost but introduces unique measurement challenges.
+
+## Thermocouple Design
+
+The thermocouple is constructed by using different metal types to join one of the rings to the heating coil, effectively creating a free temperature sensor with very low construction difficulty.
+
+### Advantages
+
+- Extremely low cost
+- Simple construction
+- Integrated into the tip design
+
+### Limitations
+
+1. **Non-optimal metals**: Uses available materials rather than calibrated thermocouple alloys
+2. **Non-constant response**: Temperature response varies across the range
+3. **Shared connections**: Same connections used for heating current, preventing simultaneous heating and measurement
+
+## How Thermocouples Work
+
+Thermocouples use a junction of two dissimilar metals to generate a small voltage (microvolts). This voltage can be measured and converted to temperature using a known transfer function.
+
+### Cold Junction Compensation
+
+The copper terminations where thermocouple wires connect form additional junctions that also generate voltages. These are called the **cold junction**.
+
+- If held at 0°C, cold junction effects are negligible
+- At room temperature, measured voltage must be compensated
+- Every metal-to-metal junction in the circuit acts as a small thermocouple
+
+## Temperature Measurement Implementation
+
+The hardware design (Pinecil, TS100, TS80) uses a consistent measurement approach:
+
+1. **Op-amp** connected directly across heating connections to the tip
+2. **Handle temperature sensor** for reference measurement
+3. **ADC sampling** when heating is off
+
+### Measurement Process
+
+When the iron is **not heating**:
+
+1. Microcontroller reads op-amp output via ADC
+2. Voltage represents temperature difference (tip - handle)
+3. Apply offset compensation (removes ADC and op-amp offsets)
+4. Convert to temperature delta in °C/K
+5. Add handle temperature to derive tip temperature
+
+<Note>
+**Tip Compatibility**: TS100 and Pinecil tips are approximately equivalent to Hakko T12 tips (within measurement error). This compatibility exists because the TS100 design mimicked the excellent T12 tip construction.
+</Note>
+
+## Temperature Control Implications
+
+### Heating vs Reading Tradeoff
+
+Since temperature can only be measured when not heating, there's a critical tradeoff:
+
+- **More frequent measurements** = Better temperature control, less heating time
+- **Fewer measurements** = More heating power, slower response
+
+**IronOS Solution**: Implements a two-speed controller loop:
+
+1. **Heat-up mode**: Fewer temperature measurements, maximum power delivery
+2. **Maintenance mode**: Double measurement rate for faster reaction times
+
+### Internal vs External Temperature
+
+The thermocouple measures the **inside** of the tip (near the heater coil), not the outside surface where soldering occurs.
+
+<Warning>
+**Thermal Lag**: The internal temperature reading lags behind the external tip temperature during rapid changes.
+</Warning>
+
+### PID Tuning Philosophy
+
+The PID controller is intentionally tuned to be **slightly underdamped** (more "jumpy" than typical):
+
+**Rationale**: When internal temperature drops, the external temperature has dropped more significantly. Overcompensation helps the system catch up faster.
+
+**Result**: Temperature display may fluctuate during use, but the thermal mass of the tip smooths these variations for stable soldering performance.
+
+<Info>
+IronOS displays the **actual measured temperature** rather than hiding variations within a tolerance band. Some commercial controllers (e.g., Weller) hide ±3-5°C fluctuations to create an illusion of perfect stability.
+</Info>
+
+### Temperature Stabilization
+
+With no external cooling, internal and external tip temperatures equalize in **3-5 seconds**.
+
+<Tip>
+When testing temperature accuracy, allow 3-5 seconds for thermal stabilization.
+</Tip>
+
+## Measurement Complexity and Accuracy
+
+### Voltage Reference Limitations
+
+The firmware performs best-effort temperature calculation within hardware constraints:
+
+- Voltage reference accuracy: **±1%** (affects all measurements)
+- No factory calibration on low-cost MCUs
+- Cannot compensate for reference drift
+
+<Note>
+**Accuracy Expectation**: Don't expect better than 1% accuracy due to fundamental hardware limitations.
+</Note>
+
+### Compensation Model
+
+The firmware accounts for:
+
+1. **Cold junction compensation** (implemented)
+2. **Constant offset** (implemented)
+
+**Not modeled**: Linear offset variation with handle temperature
+
+### Handle Temperature Effects
+
+The unmodeled linear offset with handle temperature is generally acceptable because:
+
+- During use, handle temperature stabilizes within ~10°C
+- Error becomes relatively constant during normal operation
+- Target use case is primarily above 150°C
+
+<Warning>
+**Low Temperature Anomaly**: When tip temperature approaches room temperature (sub-100°C), you may observe:
+
+- Jumping and unstable readings
+- Control issues at low setpoints
+
+This is a known tradeoff since the iron's intended use is primarily above 150°C where these errors are not dominant.
+</Warning>
+
+## Technical Specifications
+
+### Measurement Timing
+
+1. FET switches off (stops heating)
+2. Recovery time for tip capacitance discharge
+3. Op-amp exits saturation
+4. ADC samples 8 times quickly
+5. PWM output resumes
+
+This creates a small **dead time** in the output signal during each measurement cycle.
+
+### Performance Optimization
+
+The firmware balances:
+
+- **Frequent sampling**: Stable temperature control
+- **Infrequent sampling**: Maximum power delivery
+
+See [Power Management](/advanced/power-management) for details on power delivery optimization.
+
+## Resources
+
+- [Cold Junction Compensation Explained](https://www.tegam.com/what-exactly-is-cold-junction-compensation/)
+- [Thermocouple Basics Video](https://www.youtube.com/watch?v=v7NUi88Lxi8)
+- [PWM Control Overview](https://www.digikey.com/en/blog/pulse-width-modulation)

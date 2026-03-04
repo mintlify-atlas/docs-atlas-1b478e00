@@ -1,0 +1,76 @@
+---
+title: Flashing Overview
+description: Learn how to download and flash IronOS firmware to your soldering iron
+---
+
+## Firmware Types
+
+IronOS releases three types of firmware:
+
+- **Main releases**: Stable releases with high confidence in being bug-free
+- **Release candidates**: Released more often, generally fine for everyday use, allowing for translation checking and bug spotting
+- **Mainline builds**: Built from the main git branch on every change, available on the Actions tab
+
+## Downloading Firmware
+
+### Main Release
+
+<Steps>
+  <Step title="Visit the releases page">
+    Go to the [IronOS releases page](https://github.com/Ralim/IronOS/releases)
+  </Step>
+  
+  <Step title="Download your device's firmware">
+    Download the zip file that matches your model of soldering iron and extract it
+  </Step>
+  
+  <Step title="Select the correct file type">
+    - Miniware devices (TS100, TS80, TS80P, MHP30): `.hex` files
+    - Pinecil V1: `.dfu` files
+    - Pinecil V2: `.bin` files
+  </Step>
+</Steps>
+
+### Bleeding Edge / Latest
+
+For the latest code from the development branch:
+
+<Steps>
+  <Step title="Navigate to Actions">
+    Head to the [Actions](https://github.com/Ralim/IronOS/actions) page
+  </Step>
+  
+  <Step title="Select a build">
+    Select the run for the appropriate branch (generally `master`)
+  </Step>
+  
+  <Step title="Download artifacts">
+    Scroll down to the "Artifacts" section and click on your device model to download a zip file
+  </Step>
+  
+  <Step title="Extract and flash">
+    Extract the zip and use the appropriate file type for your device
+  </Step>
+</Steps>
+
+## Device-Specific Guides
+
+Select your device for detailed flashing instructions:
+
+<CardGroup cols={2}>
+  <Card title="Pinecil V2" icon="microchip" href="/flashing/pinecil-v2">
+    BL706 MCU with BLISP flasher
+  </Card>
+  <Card title="Pinecil V1" icon="microchip" href="/flashing/pinecil-v1">
+    GD32 MCU with USB-DFU
+  </Card>
+  <Card title="TS100" icon="wrench" href="/flashing/ts100">
+    Classic soldering iron
+  </Card>
+  <Card title="TS80/TS80P" icon="wrench" href="/flashing/ts80p">
+    Portable soldering iron
+  </Card>
+  <Card title="MHP30" icon="fire" href="/flashing/mhp30">
+    Hot plate controller
+  </Card>
+</CardGroup>

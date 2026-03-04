@@ -1,0 +1,126 @@
+---
+title: Hall Effect Sensor
+description: Optional auto-sleep functionality for Pinecil using hall effect sensor
+---
+
+The hall effect sensor is an optional enhancement for Pinecil (v1/v2) that enables automatic sleep mode when the iron is placed in a stand with a magnet.
+
+## Sleep Mode Overview
+
+In sleep mode, the iron automatically lowers temperature to 150°C (default). This setting was chosen as it's just below the melting point of most solders, helping to:
+
+- Reduce oxidation rate
+- Prevent damage to soldering tips
+- Extend tip life
+
+The default sleep temperature is adjustable in settings. Moving the iron or pressing any button wakes it back to soldering mode.
+
+<Tip>
+As a general rule, when not in use, unplug the unit or let it enter sleep mode to extend the life of replaceable tips.
+</Tip>
+
+## Hall Effect Sensor (Pinecil Only)
+
+Pinecil has an unpopulated footprint (**U14**) for a hall effect sensor that can trigger automatic sleep mode when entering a stand with a magnet.
+
+### Hardware Requirements
+
+**Hall Effect Sensor**: Silicon Labs **Si7210-B-00-IV**
+- Available at many electronic stores for ~$2-$6
+- Located at footprint U14 on PCB
+- Physical location near copper contacts for tip at front of handle
+
+**Magnets**: Neodymium magnets recommended
+- Small magnets: 2-3 may be required
+- Too many magnets can be detrimental by distorting magnetic field
+
+### Installation
+
+1. Install Si7210-B-00-IV sensor at U14 footprint on Pinecil PCB
+2. Place magnet(s) on stand near sensor location when iron is docked
+3. Configure sensitivity in [Sleep Menu settings](/user-guide/settings#sleep-mode)
+4. Test and adjust magnet position/quantity for reliable triggering
+
+[Reference Schematics U14](https://files.pine64.org/doc/Pinecil/Pinecil_schematic_v1.0a_20201120.pdf)
+
+## Sensitivity Settings
+
+Ten user-selectable sensitivity levels are available:
+
+| Setting | Sensitivity (mT) | Use Case |
+|---------|------------------|----------|
+| 0 | Off | Hall sensor disabled |
+| 1 | 1000 | Very strong/large magnet required; useful when soldering PCBs with magnets to avoid false triggers |
+| 2 | 750 | Strong magnet required |
+| 3 | 500 | Medium-strong magnet |
+| 4 | 250 | Medium magnet |
+| 5 | 150 | Default setting |
+| 6 | 100 | Moderate sensitivity |
+| 7 | 75 | Increased sensitivity |
+| 8 | 50 | High sensitivity |
+| 9 | 25 | Highest sensitivity; useful with small magnets, but may falsely trigger near magnetized items |
+
+### Choosing Sensitivity
+
+- **Setting 1**: Prevents auto-sleep when soldering near magnets; requires very strong stand magnet
+- **Setting 9**: Works with small magnets; risk of false triggers near magnetic tools
+- **Settings 5-7**: Good starting point for most setups
+
+## Configuration & Testing
+
+### Monitoring Hall Sensor
+
+Use the [Debug Menu](/user-guide/debug-menu) to display the real-time hall sensor reading. This helps:
+
+1. Find optimal magnet positions on stand
+2. Determine if you have too many or too few magnets
+3. Verify sensitivity setting is appropriate
+
+### Optimization Process
+
+1. Enable hall sensor in Sleep Menu settings
+2. Access Debug Menu to view live hall number
+3. Slowly move magnet around stand area while watching hall number
+4. Position magnet(s) where you have the **highest hall number**
+5. Test reliability by placing iron in stand multiple times
+6. Adjust sensitivity setting if needed
+
+<Tip>
+When successfully triggered, _Zzzz_ will appear on the display (or text in detailed mode).
+</Tip>
+
+## Magnet Placement Guidelines
+
+### Best Practices
+
+- **Location**: Sensor is at front of handle near tip contacts
+- **Orientation**: North and South faces of magnets matter for optimal sensor reaction
+- **Quantity**: Start with 2-3 small neodymium magnets
+- **Testing**: Watch hall number change in real-time while positioning
+
+### Common Issues
+
+**Too Many Magnets**: Can distort magnetic field and prevent triggering
+
+**[Demo video showing magnet interference](https://www.youtube.com/shorts/afkqKwCX00I)**: Magnets at top of stand work correctly, but adding side magnets prevented sleep mode activation due to field distortion.
+
+**Wrong Orientation**: Magnet polarity affects sensor response
+
+Refer to [SI7210-B-00-IV datasheet](https://www.silabs.com/documents/public/application-notes/an1018-si72xx-sensors.pdf) for details on magnetic field orientation.
+
+## Benefits
+
+- **Automatic operation**: No manual sleep button needed
+- **Tip longevity**: Consistent sleep mode reduces oxidation
+- **Professional feature**: Typically found only in high-end irons
+- **Low cost**: ~$2-$6 component adds significant functionality
+- **Customizable**: Ten sensitivity levels for different setups
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Not triggering | Increase sensitivity setting; add more magnets; check magnet orientation |
+| False triggers | Decrease sensitivity setting; remove excess magnets; keep magnetized tools away |
+| Inconsistent | Optimize magnet position using Debug Menu hall number; ensure magnets are secure |
+| Never works | Verify sensor installed correctly at U14; check solder joints; test with strong magnet |

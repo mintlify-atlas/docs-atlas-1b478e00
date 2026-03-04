@@ -1,0 +1,162 @@
+---
+title: Menu System
+description: Navigate the IronOS settings menu system
+---
+
+IronOS allows you to adjust all settings directly on the device without needing a computer.
+
+## Accessing the Menu
+
+From the standby screen, short press the `-/B` button to enter the settings menu.
+
+## Menu Navigation
+
+| Button | Function |
+|--------|----------|
+| `-/B` | Scroll through menu items (decline/back) |
+| `+/A` | Select item or change value (accept/enter) |
+| Both buttons | Exit current menu level |
+| Long hold `-/B` | Return to standby screen |
+| Wait 3 seconds | Display help text for current setting |
+
+<Tip>
+The menu automatically returns to standby if left idle after completing a full cycle through all options.
+</Tip>
+
+## Menu Structure
+
+Settings are organized into five main categories, arranged with the most frequently used settings first.
+
+### 1. Power Settings
+
+Settings related to input voltage and power management.
+
+- Power source configuration
+- Voltage limits for battery protection
+- QC/PD negotiation settings
+- Power limit configuration
+
+### 2. Soldering Settings
+
+Settings for active soldering operation.
+
+- Boost temperature
+- Startup behavior
+- Temperature change increments (short and long press)
+- Button locking
+- Profile mode settings (MHP30)
+
+### 3. Sleep Mode
+
+Power-saving and timeout settings.
+
+- Motion sensitivity
+- Sleep temperature
+- Sleep timeout
+- Shutdown timeout
+- Hall sensor settings (Pinecil)
+
+### 4. User Interface
+
+Display and interaction preferences.
+
+- Temperature unit (°C/°F)
+- Display orientation
+- Cooldown flashing warning
+- Scrolling speed
+- Button swap options
+- Animation settings
+- Screen brightness and inversion
+- Boot logo duration
+- Detailed screen views
+- Bluetooth (Pinecil V2)
+
+### 5. Advanced Settings
+
+Advanced configuration and calibration options.
+
+- Calibrate CJC at next boot
+- Calibrate input voltage
+- Power pulse settings (for power banks)
+- Restore default settings
+- Language selection
+- Soldering tip type (where applicable)
+
+## On-Device Help
+
+IronOS includes built-in help for every setting:
+
+1. Navigate to any setting
+2. Wait 3 seconds without pressing buttons
+3. Help text will scroll across the screen
+
+This mini help guide explains what each setting does without needing to reference external documentation.
+
+## Saving Settings
+
+<Warning>
+Settings are only saved when you exit the menu properly. If you unplug the device while still in the settings menu, changes will be lost.
+</Warning>
+
+To save your settings:
+
+1. Navigate through the menu using `-/B`
+2. Complete the full menu cycle, OR
+3. Press both buttons to exit each submenu level, OR
+4. Long hold `-/B` to exit immediately
+
+## Calibration Procedures
+
+### Calibrating Input Voltage
+
+If your device displays incorrect voltage readings (up to 0.6V variance due to resistor tolerances):
+
+1. Measure actual input voltage with a multimeter
+2. Connect power to your device
+3. Enter **Settings menu**
+4. Navigate to **Advanced settings**
+5. Select **Calibrate input voltage**
+6. Use `+/A` and `-/B` to adjust displayed voltage to match your measurement
+7. Press both buttons together to save and exit
+
+<Note>
+Calibration is only needed if you experience cutoff issues. Weak power supplies may also trigger cutoff warnings.
+</Note>
+
+### Calibrating Tip CJC (Cold Junction Compensation)
+
+Only calibrate if:
+- Tip temperature is significantly higher than displayed
+- Tips are wearing out prematurely
+- Delta between target and measured temperature exceeds 5°C
+
+<Warning>
+Incorrect calibration can make temperature readings worse. Always let the device cool to room temperature before calibrating.
+</Warning>
+
+**Calibration steps:**
+
+1. Power on your device
+2. Go to **Advanced Settings** → **Calibrate CJC at next boot**
+3. Confirm with `+/A` to accept the warning
+4. Exit settings menu (hold `-/B`)
+5. Unplug your device
+6. **Critical**: Ensure tip is attached and wait until both tip and handle reach room temperature
+7. Power on the device (ideally keep it on desk, not in hand)
+8. Display shows `Calibrating....` briefly
+9. `Calibration done!` appears for 3 seconds
+10. Device continues normal boot
+
+<Tip>
+View the calibration offset value in the Debug menu after calibration is complete.
+</Tip>
+
+## Debug Menu
+
+Access diagnostic information:
+
+- From standby screen, long hold `-/B` button
+- Use `+/A` to scroll through debug screens
+- Press `-/B` to exit
+
+See the [Debug Menu](/user-guide/debug-menu) page for details on available diagnostic information.

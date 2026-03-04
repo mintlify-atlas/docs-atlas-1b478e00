@@ -1,0 +1,189 @@
+---
+title: Pinecil V1 Flashing Guide
+description: Complete guide to flashing IronOS firmware on Pinecil V1
+---
+
+## Overview
+
+The Pinecil V1 uses a GD32 MCU that supports USB-DFU (Device Firmware Upgrade) mode. This allows you to flash firmware directly over USB.
+
+<Note>
+You cannot permanently damage Pinecil V1 during a firmware update because DFU is in ROM. An invalid firmware flash may render it temporarily inoperable, but re-flashing with working firmware will fix everything.
+</Note>
+
+## Recommended Tools
+
+- **Windows/MacOS**: [Pine64 Updater](https://github.com/pine64/pine64_updater) - Easy GUI app that automatically fetches the newest stable version
+- **Linux/MacOS**: [PineFlash](https://github.com/Spagett1/PineFlash) - Easy GUI app with automatic updates
+- **Manual method**: `dfu-util` command line tool (all platforms)
+
+<Warning>
+Do not use the DC barrel jack while updating firmware or you may destroy your PC.
+</Warning>
+
+## Flashing with dfu-util (Linux/Mac)
+
+<Steps>
+  <Step title="Update dfu-util">
+    Highly recommend updating `dfu-util` to the newest version before starting
+  </Step>
+  
+  <Step title="Download firmware">
+    Download and extract the firmware package from [IronOS Releases](https://github.com/Ralim/IronOS/releases)
+  </Step>
+  
+  <Step title="Enter DFU mode">
+    Press and hold the (`-`) button at the back of the iron before connecting the USB-C cable
+  </Step>
+  
+  <Step title="Connect USB">
+    Connect USB to PC and USB-C to back of Pinecil while still holding the (`-`) button
+  </Step>
+  
+  <Step title="Wait and release">
+    Once the USB cable is connected at both ends, wait ~10 seconds more, then release the (`-`) button. The screen will stay black/off to indicate DFU mode
+  </Step>
+  
+  <Step title="Flash firmware">
+    Run the following command (replace `EN` with your language code):
+    
+    ```bash
+    dfu-util -D Pinecil_EN.dfu
+    ```
+  </Step>
+</Steps>
+
+## Flashing with dfu-util (Windows)
+
+<Steps>
+  <Step title="Update dfu-util">
+    Update `dfu-util` to the newest version
+  </Step>
+  
+  <Step title="Download firmware">
+    Download and extract the firmware package from [IronOS Releases](https://github.com/Ralim/IronOS/releases)
+  </Step>
+  
+  <Step title="Enter DFU mode">
+    Press and hold (`-`) button at the back of the iron (do not release)
+  </Step>
+  
+  <Step title="Connect USB">
+    Connect USB to PC and USB-C to the back of Pinecil, keep holding (`-`) button down
+  </Step>
+  
+  <Step title="Wait and release">
+    After the USB cable is connected at both ends, wait ~10 seconds more, then release the (`-`) button. Screen will stay black/off
+  </Step>
+  
+  <Step title="Open command prompt">
+    Open PowerShell or Command window and navigate to the firmware directory
+  </Step>
+  
+  <Step title="Flash firmware">
+    Run the command:
+    
+    ```bash
+    dfu-util -D Pinecil_EN.dfu
+    ```
+  </Step>
+</Steps>
+
+## Flashing with GD32 DFU Tool (Windows)
+
+If you're uncomfortable with the command line:
+
+<Steps>
+  <Step title="Download tools">
+    Download both the [GD32 MCU DFU Tool](http://www.gd32mcu.com/en/download?kw=GD32+MCU+Dfu+Tool&lan=en) and [GD32 DFU Drivers](http://www.gd32mcu.com/en/download?kw=GD32+Dfu+Drivers&lan=en)
+    
+    Check properties of both downloads, tick Unblock if needed, then unzip
+  </Step>
+  
+  <Step title="Install drivers and tool">
+    Install the drivers and the GD32 DFU tool (ignore prompts to update the tool)
+  </Step>
+  
+  <Step title="Enter DFU mode">
+    Press and hold (`-`) button at the back of Pinecil (do not release)
+  </Step>
+  
+  <Step title="Connect to PC">
+    Connect Pinecil to PC via USB cable (do not release the (`-`) button yet). Screen will stay black/off
+  </Step>
+  
+  <Step title="Open GD32 DFU Tool">
+    Open the GD32 DFU Tool and verify that `GD DFU DEVICE 1` appears at the top
+    
+    <Warning>
+    If the DFU Device box is blank, Pinecil is not connected in DFU mode. Repeat the previous steps.
+    </Warning>
+  </Step>
+  
+  <Step title="Release button and flash">
+    If it has been more than 10 seconds since connecting USB, release the (`-`) button
+    
+    Select `Download to device` > `Open` > Browse to your firmware folder
+    
+    Select the `.hex` file for your language (e.g., `Pinecil_EN.hex`), tick `Verify after download`
+  </Step>
+  
+  <Step title="Complete flash">
+    Click `OK` at bottom. After a few minutes you will see 0-100%, then "Download successfully!"
+    
+    Click `Leave DFU` at the top
+  </Step>
+  
+  <Step title="Test the update">
+    Disconnect Pinecil from PC and plug into a power supply
+    
+    Hold the minus (`-`) button for a few seconds to see the new firmware version
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Multiple DFU Devices Found
+
+If you get an error stating "More than one DFU capable USB device found!" you may have an old version of `dfu-util`.
+
+Run `dfu-util -l` to see all DFU devices:
+
+```bash
+Found DFU: [28e9:0189] ver=0100, devnum=48, cfg=1, intf=0, path="1-1", alt=1, name="@Option Bytes  /0x1FFFF800/01*016Be", serial="??"
+Found DFU: [28e9:0189] ver=0100, devnum=48, cfg=1, intf=0, path="1-1", alt=0, name="@Internal Flash  /0x08000000/128*001Kg", serial="??"
+```
+
+Target the Internal Flash using `alt=0`:
+
+```bash
+dfu-util -D Pinecil_EN.dfu -a 0
+```
+
+### Update Crashes Partway
+
+If the update crashes during flashing:
+
+- Try a direct connection to a USB port (no hubs)
+- Use a shorter cable
+- Try a different PC/laptop and different ports
+- Hold down the (`-`) button for the entire firmware update
+
+### USB Autosuspend Issues (Linux)
+
+If `dfu-util` aborts with `LIBUSB_ERROR_IO` and `dmesg` shows USB errors, disable USB autosuspend with udev rules:
+
+```udev
+SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="0189", MODE:="0660"
+SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="0189", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="0189", TEST=="power/control", ATTR{power/control}="on"
+```
+
+### DC Low Message
+
+A PC/laptop cannot fully power Pinecil. It can only provide 5V (non-PD) for firmware updates. The "DC Low" message is normal during updates.
+
+## Resources
+
+- [Pinecil Wiki](https://wiki.pine64.org/wiki/Pinecil) - Comprehensive resource for all things Pinecil
+- [Pine64 Community Chat](https://wiki.pine64.org/wiki/Pinecil#Live_Community_Chat) - Discord/Telegram/Matrix support channels

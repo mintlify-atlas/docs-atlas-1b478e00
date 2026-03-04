@@ -1,0 +1,219 @@
+---
+title: Custom Boot Logo
+description: How to create and flash custom boot logos and animations
+---
+
+IronOS supports custom boot logos and animations that display when your device starts up. This is a great way to personalize your device.
+
+## Overview
+
+Boot logos are stored at the end of flash storage, next to user settings. This location ensures they survive firmware updates.
+
+**Key features**:
+- Supports static images and animations
+- Configurable display duration
+- Survives firmware updates
+- Supported on all IronOS devices
+
+<Note>
+Boot logos are no longer included in the main IronOS repository. You need to generate or download them separately.
+</Note>
+
+## Getting Pre-Made Logos
+
+The community has contributed many ready-to-use logos:
+
+1. Visit [IronOS-Meta Releases](https://github.com/Ralim/IronOS-Meta/releases)
+2. Download the appropriate zip file:
+   - **Pinecil.zip** for Pinecil V1/V2
+   - **Miniware.zip** for TS100/TS80/TS80P/TS101
+3. Extract and flash using the instructions in the [Flashing section](#flashing-the-logo)
+
+## Creating Custom Logos
+
+### Image Requirements
+
+| Specification | Value |
+|---------------|-------|
+| Resolution | 96×16 pixels |
+| Color depth | 1-bit (black & white) |
+| Format | PNG or BMP |
+| Orientation | Landscape |
+
+<Tip>
+Create your image at 96×16 with manual black and white pixels for best results. Color images are automatically converted, but thresholding may not always work perfectly.
+</Tip>
+
+### Required Tools
+
+1. **Python 3** (any recent version)
+2. **Pillow** library
+3. **IntelHex** library
+
+#### Installing Dependencies
+
+**Via pip (recommended)**:
+```bash
+python -m pip install pillow
+python -m pip install intelhex
+```
+
+**On Debian/Ubuntu**:
+```bash
+sudo apt install python3-pil python3-intelhex
+```
+
+<Note>
+Windows users should use PowerShell instead of Command Prompt.
+</Note>
+
+### Converting Images
+
+1. Download [IronOS-Meta repository](https://github.com/Ralim/IronOS-Meta)
+2. Navigate to the `Boot Logos` folder
+3. Copy your image file to this folder
+4. Run the conversion script:
+
+```bash
+python img2logo.py input.png output_folder -m MODEL
+```
+
+#### Supported Models
+
+| Model Code | Devices |
+|------------|----------|
+| `miniware` | TS100, TS80, TS80P |
+| `pinecilv1` | Pinecil V1 |
+| `pinecilv2` | Pinecil V2 |
+| `ts101` | TS101 (requires special steps, see below) |
+| `s60` | Sequre S60 |
+| `mhp30` | MHP30 |
+
+<Warning>
+Files are NOT interchangeable between device models due to different flash locations.
+</Warning>
+
+**Output**: The script creates `.hex` and `.dfu` files. Which one you use depends on your device.
+
+### Example
+
+```bash
+python img2logo.py my_logo.png output -m pinecilv2
+```
+
+This creates:
+- `output/my_logo.hex`
+- `output/my_logo.dfu`
+
+## TS101 Special Requirements
+
+The TS101 has unique quirks due to its STM32 clone MCU and modified bootloader:
+
+**Limitations**:
+- Cannot flash small files alone
+- Bootloader cannot write above 99K in flash
+- Logo must be merged with firmware
+
+**Process**:
+
+1. Download latest IronOS firmware for TS101
+2. Convert your logo with merge flag:
+
+```bash
+python3 img2logo.py image.png output -m ts101 --merge path/to/firmware.hex
+```
+
+3. Flash the merged file (contains both firmware and logo)
+4. Future firmware updates preserve the logo
+
+<Note>
+Pre-made TS101 logos are not available in IronOS-Meta releases due to this requirement.
+</Note>
+
+## Flashing the Logo
+
+### Method 1: Virtual Disk (TS100/TS101/TS80/TS80P/S60/MHP30)
+
+For devices with DFU bootloader that appear as USB drives:
+
+1. Put device in update mode:
+   - Hold `B` button while connecting USB
+2. Device appears as a USB drive
+3. Copy the `.hex` file to the drive
+4. Wait for `.rdy` file to appear (indicates success)
+5. Unplug and reconnect to see your logo
+
+### Method 2: GUI Flash Tool (Pinecil V1/V2)
+
+If you use a GUI application for firmware updates:
+
+1. Open your flashing tool
+2. Try the `.dfu` file first
+3. If that fails, try the `.hex` file
+4. If neither work, update your flashing tool
+
+<Tip>
+Recommended tools:
+- [Pinecil Flasher](https://github.com/builder555/PineSAM)
+- [IronOS-dfu](https://github.com/Ralim/IronOS-dfu)
+</Tip>
+
+### Method 3: dfu-util (Pinecil V1 / IronOS-DFU)
+
+For command-line flashing on Pinecil V1 or devices with IronOS-DFU bootloader:
+
+```bash
+dfu-util -D logo.dfu
+```
+
+Power cycle the device to see your new logo.
+
+### Method 4: blisp (Pinecil V2)
+
+For Pinecil V2 command-line flashing:
+
+```bash
+blisp write -c bl70x --reset logo.dfu
+```
+
+Device reboots automatically and displays the new logo.
+
+## Erasing Logos
+
+To remove a custom logo:
+
+**Option 1**: Flash the erase file generated with your logo
+
+**Option 2**: Perform a full flash erase (method depends on device)
+
+**Option 3**: Flash a different logo to replace it
+
+<Note>
+Regular firmware updates do NOT erase logos.
+</Note>
+
+## Configuring Display Duration
+
+Set how long the boot logo displays:
+
+1. Enter **Settings menu**
+2. Navigate to **User interface** submenu
+3. Find **Boot logo duration**
+4. Adjust value (in seconds)
+5. Set to `0` to skip logo entirely
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Script won't run | Verify Python 3 and dependencies are installed |
+| Image looks wrong | Create 96×16 B&W image manually instead of converting color |
+| Logo doesn't appear | Check you flashed the correct model file |
+| Logo erased after update | Shouldn't happen; check flash method |
+| TS101 won't flash | Ensure firmware and logo are merged together |
+
+## Community Resources
+
+- [IronOS-Meta Repository](https://github.com/Ralim/IronOS-Meta) - Conversion scripts and community logos
+- [IronOS-Meta Releases](https://github.com/Ralim/IronOS-Meta/releases) - Pre-converted logos for all models
+- Share your logos with the community by contributing to IronOS-Meta

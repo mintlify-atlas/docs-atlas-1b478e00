@@ -1,0 +1,154 @@
+---
+title: Common Issues
+description: Common problems and solutions for IronOS devices
+---
+
+If your device is not operating as expected and you are within the manufacturer support window, please first contact your manufacturer and RMA/warranty your device.
+
+If your iron is not working as expected, [the Debug menu](/user-guide/debug-menu) exposes internal measurements to help you narrow down the root cause of the issue.
+
+<Warning>
+The **VAST** majority of issues are poor soldering or cold solder joints. If you can open up your iron, inspect all connection points and use another iron to reflow any suspicious ones - this can fix most issues.
+</Warning>
+
+## Getting Help
+
+You are welcome to open discussions about issues, or if you bought your Pinecil from an official store, use the [Pinecil community chat](https://wiki.pine64.org/wiki/Pinecil#Community_links) for support. It is helpful to do some basic diagnostics first in case the issue is easily fixed.
+
+<Note>
+Issues with the soldering of the main MCU could cause many problems and should always be checked.
+</Note>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Tip Shorted Warning">
+    If you are powering up a device that supports tip resistance detection (TS101 and Pinecilv2), the firmware checks the readings of the raw tip resistance and sorts these into three "bins": `8 ohm tips`, `6.2 ohm tips`, and `tip-shorted`. The tip resistance is used when negotiating USB-PD and in thermal calculations.
+
+    The `tip-shorted` option is selected if your tip is measured to be abnormally small. This could indicate a failed driver mosfet or a failed tip.
+
+    <Warning>
+    When this warning is shown, heating will be disabled to protect from damage. Trying to heat a shorted tip can damage the iron itself.
+    </Warning>
+
+    ### Troubleshooting Steps
+
+    1. Remove your tip and manually measure and verify the tip's resistance
+    2. It should be 6-8 ohms (depending on tip type)
+    3. When measuring resistances this small, some multimeters can struggle
+    4. If you have access to a current limited bench power supply, try doing a 4-wire measurement by measuring the voltage drop on the tip while applying a known current (`R=V/I`)
+
+    If the tip measures correctly, you may have a damaged driver mosfet. It would be ideal to open your iron and test the mosfet is operating correctly.
+
+    If after both checks everything looks as expected, feel free to open a discussion on IronOS or use the Pinecil community chat.
+  </Accordion>
+
+  <Accordion title="High Tip Temperature Reading When Cool">
+    If you are finding the tip is reading high, the first fields to check in the Debug menu are `RTip` and `CHan`.
+
+    - **RTip**: Raw tip reading in μV; at cool this should be around 700-1000 for larger tips and ~1500 for smaller tips (TS80's)
+    - **CHan**: Temperature of the temperature sensor on the PCB in degrees Celsius × 10 (e.g., 29°C ambient should read as 290)
+
+    ### RTip Out of Spec
+
+    `RTip` will over-read on bad contacts or no tip inserted.
+
+    **If RTip is overreading**, you may have:
+    - Partially stuck on main MOSFET
+    - Slow reacting main MOSFET driver transistor
+    - Damaged Op-Amp
+    - Poor soldering on the Op-Amp circuitry
+    - No tip inserted or tip that is not connecting correctly
+
+    **If RTip is under-reading**, you most likely have issues with the Op-Amp or the tip. The signal should be pulled high by hardware (reading hot), so this often means the MCU is not reading the signal correctly. Check MCU soldering.
+
+    ### CHan Out of Spec
+
+    CHan reading comes directly from the cold junction compensation temperature sensor. This is usually a TMP36 (Pinecil V1), or an NTC thermistor (MHP30, TS80P, Pinecil V2).
+
+    **If CHan is reading low:**
+    - Check the connection from the MCU to the handle temperature sensor
+    - Check the power pin connection on the TMP36
+    - Check pullup resistor on the NTC thermistor
+    - Check no bridged pins or weak shorts on the signal to nearby pins on MCU or temperature sensor
+    - Reflow/resolder the aforementioned components
+
+    **If CHan is reading higher:**
+    - Check ground connections on the sensors
+    - Check no bridged pins or weak shorts on the signal to nearby pins on MCU or temperature sensor
+    - Reflow/resolder the aforementioned components
+  </Accordion>
+
+  <Accordion title="No Display or Dots on Display">
+    If when you power up your iron you get no display, the first test is to (carefully) attempt to heat the tip.
+
+    1. Press the front button (`+/A`) on your device and check if the tip heats up
+    2. If the tip does not heat up, try reflashing the firmware first in case it is corrupted
+
+    ### Main Failure Mode
+
+    The main failure mode of the OLED display module is usually poor soldering on the OLED display cable to the main PCB. As this is soldered by hand generally, it's the most prone to failures.
+
+    If you have a poor connection or a floating pin, you can end up with a state where the screen works _sometimes_ and then freezes or only works on some power cycles. It might work on very old versions of IronOS but not the newest ones.
+
+    **Troubleshooting steps:**
+    - Try to reflow the pins for the OLED
+    - On 96x16 screens, carefully peel it back from the adhesive and reflow the solder on the pins
+    - Check the pull-up resistors on the SDA and SCL pins (the OLED runs on an I2C bus)
+
+    ### Replacing a Dead OLED
+
+    If after all checks the OLED is still blank, or pixels are barely visible, although the soldering iron itself is working (turning on, heating up, melting solder successfully), then most likely the OLED is dead. But it can be relatively easily replaced.
+
+    Models like `TS100`, `TS80`, and `TS80P` share the same OLED screen which can be bought online:
+
+    1. Find and buy a display with the following spec: `OLED 0.69 inch / 14 pins / 96 x 16 pixels / 9616TSWC / I2C IIC`
+    2. Disassemble your soldering iron
+    3. Desolder old OLED and solder back new one
+    4. Assemble your soldering iron back
+
+    <Info>
+    There are YouTube videos showing how to do this, like [this one for TS100](https://www.youtube.com/watch?v=HlWAY0oYPFI).
+    </Info>
+
+    <Note>
+    OLED technology has a well-known issue: sooner or later the brightness starts to "fade out" until completely off. Common recommendations to prolong lifetime are: reduce brightness and reduce frequent updates (disable animations). However, results vary - some users experience issues after just a few months, while others have no issues at all.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Tip Heats When Not in Heating Mode">
+    <Warning>
+    **DISCONNECT YOUR TIP IMMEDIATELY**
+    </Warning>
+
+    Most likely you have either a blown MOSFET or shorted pin.
+
+    **Troubleshooting steps:**
+    1. Check the MOSFET
+    2. Check the driver transistor
+
+    The firmware will not enable the tip until you are in soldering mode, so this indicates a hardware failure.
+  </Accordion>
+
+  <Accordion title="Accelerometer Not Detected">
+    Your iron may have a new accelerometer that is not supported yet (happens every year or so) OR there is a soldering issue with the accelerometer.
+
+    **Troubleshooting steps:**
+    1. Check if there's a known issue on GitHub
+    2. Try going back to an earlier firmware release to test if this is a new issue
+    3. Try reflowing/resoldering the accelerometer
+    4. If your iron is new, there's a slim chance your accelerometer may be DOA and need replacement
+
+    <Note>
+    This warning will only be shown the first few times until settings are reset.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Card title="Tip Resistance" icon="ruler">
+  The tip is important for the operation of your iron:
+  - T100 and Pinecil tips are around **8 ohms**
+  - TS80(P) tips are around **4.5 ohms**
+</Card>

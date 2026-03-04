@@ -1,0 +1,81 @@
+---
+title: Pinecil V2 Flashing Guide
+description: Complete guide to flashing IronOS firmware on Pinecil V2
+---
+
+## Overview
+
+The Pinecil V2 uses a Bouffalo BL706 MCU and does not use USB-DFU for flashing. Instead, it uses the BLISP flasher tool.
+
+<Note>
+You cannot permanently damage Pinecil V2 during a firmware update because the bootloader (BIN) is in ROM. An invalid firmware flash may render it temporarily inoperable, but re-flashing with working firmware will fix everything.
+</Note>
+
+## Requirements
+
+- USB-C cable with data support
+- [BLISP flasher](https://github.com/pine64/blisp) tool
+- Downloaded `.bin` firmware file for Pinecil V2
+
+<Warning>
+A USB-C cable is required for updates. Avoid USB hubs when possible as some have compatibility issues.
+</Warning>
+
+## Flashing Instructions
+
+<Steps>
+  <Step title="Download firmware">
+    Download the Pinecil V2 firmware `.bin` file from the [releases page](https://github.com/Ralim/IronOS/releases)
+  </Step>
+  
+  <Step title="Install BLISP">
+    Install the [BLISP flasher](https://github.com/pine64/blisp) tool for your operating system
+  </Step>
+  
+  <Step title="Enter bootloader mode">
+    Follow the BLISP instructions to put your Pinecil V2 into bootloader mode
+  </Step>
+  
+  <Step title="Flash firmware">
+    Use BLISP to upload the firmware to the MCU
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Timeouts or Bootloader Errors
+
+The BL706 has a USB PHY that can cause problems with certain cables and ports:
+
+<AccordionGroup>
+  <Accordion title="Cable quality issues">
+    The USB PHY can struggle with cheap cables, especially thin ones without shielding. Use a good quality, short cable.
+    
+    This is especially common with cables supplied with Apple chargers when used with newer Ryzen processor ports.
+  </Accordion>
+  
+  <Accordion title="Try different USB ports">
+    Different USB ports may use different hubs or signaling lengths, which can fix the issue. Try multiple ports on your computer.
+  </Accordion>
+  
+  <Accordion title="USB 2.0 vs USB 3.0">
+    By design, Pinecil V2 exposes internal buses on USB3 pins for hacking/debugging. This may cause issues with some chipsets.
+    
+    Try using a USB 2.0 cable or a USB-C → USB-A → USB-C adapter chain (many adaptors are USB2 only).
+  </Accordion>
+  
+  <Accordion title="Use a USB hub">
+    Adding a USB hub in the chain can re-form the signal and work around connection issues.
+  </Accordion>
+  
+  <Accordion title="Windows issues">
+    Some users have reported Windows-specific issues that were resolved by switching to Linux (live CD).
+  </Accordion>
+</AccordionGroup>
+
+## Resources
+
+- [Pinecil Wiki](https://wiki.pine64.org/wiki/Pinecil) - Comprehensive resource for all things Pinecil
+- [Pinecil Firmware & Updates](https://wiki.pine64.org/wiki/Pinecil#Firmware_&_Updates) - Official update instructions
+- [BL706 Chipset Background](https://lupyuen.github.io/articles/bl706) - Technical details about the MCU
+- [Pine64 Community Chat](https://wiki.pine64.org/wiki/Pinecil#Live_Community_Chat) - Discord/Telegram/Matrix support channels

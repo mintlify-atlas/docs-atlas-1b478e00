@@ -1,0 +1,583 @@
+---
+title: PID Control Implementation
+description: Temperature control algorithms in IronOS
+---
+
+IronOS implements sophisticated temperature control to maintain accurate and stable tip temperature. This document explains the control algorithms used and how to tune them.
+
+## Overview
+
+The temperature control system runs in a dedicated high-priority FreeRTOS task (`PIDThread`) that:
+
+1. Reads tip temperature from ADC
+2. Calculates required heating power
+3. Applies safety limits and filters
+4. Sets PWM output to heating element
+5. Detects thermal runaway conditions
+
+**File:** `source/Core/Threads/PIDThread.cpp`
+
+**Update Rate:** 8 Hz (configurable via `PID_TIM_HZ`)
+
+**Priority:** `osPriorityRealtime` - Highest priority for safety
+
+## Control Algorithms
+
+IronOS supports two temperature control algorithms, selectable at compile time.
+
+### Algorithm 1: Self-Decaying Integrator (Default)
+
+The default algorithm uses a self-decaying integrator optimized for soldering iron thermal characteristics.
+
+#### Why Not Standard PID?
+
+Soldering irons present unique challenges:
+
+**High Thermal Inertia:** The heater element heats faster than the thermal mass of the tip, causing:
+- Temperature measurements spike immediately after heating
+- Readings stabilize at lower value moments later
+- Standard PID interprets this as overshoot and compensates incorrectly
+
+**Small Thermal Mass:** Tips heat and cool very quickly:
+- Need aggressive control to minimize temperature droop
+- Standard PID can overshoot significantly
+- Recovery from large thermal loads (soldering joints) must be fast
+
+#### Algorithm Design
+
+The integrator acts as a **hybrid P+I term**:
+
+```cpp
+template <class T = TemperatureType_t> 
+struct Integrator {
+  T sum;  // Running sum (integrator state)
+  
+  T update(const T val,           // Input: required power
+           const int32_t inertia,  // Thermal inertia factor
+           const int32_t gain,     // Gain factor
+           const int32_t rate,     // Update frequency
+           const int32_t limit) {  // Output limit
+    
+    // Decay old value (self-decaying behavior)
+    sum = (sum * (100 - (inertia / rate))) / 100;
+    
+    // Add new value (integration)
+    sum += (gain * val) / rate;
+    
+    // Limit output (anti-windup)
+    if (sum > limit) {
+      sum = limit;
+    } else if (sum < -limit) {
+      sum = -limit;
+    }
+    
+    return sum;
+  }
+};
+```
+
+#### How It Works
+
+**Proportional Component:**
+
+Input value is based on temperature error:
+```cpp
+val = (TIP_THERMAL_MASS) * (set_point - current_reading)
+```
+
+This represents power needed to change temperature at 1°C/sec.
+
+**Decay Term (P-like behavior):**
+```cpp
+sum = (sum * (100 - (inertia / rate))) / 100;
+```
+
+Large errors → acts like proportional term
+Small errors → decay is minimal, acts like integrator
+
+**Integration Term (I-like behavior):**
+```cpp
+sum += (gain * val) / rate;
+```
+
+Accumulates error over time for steady-state accuracy.
+
+#### Tuning Parameters
+
+**TIP_THERMAL_MASS** (`configuration.h`):
+- Thermal mass in units of 0.1 J/°C
+- Example: 120 = 12.0 J/°C
+- Higher values → more aggressive heating
+- Measure: Heat capacity of tip + heater assembly
+
+**TIP_THERMAL_INERTIA** (`configuration.h`):
+- Controls decay rate of integrator
+- Range: 1-200 typical
+- Lower values → more P-like (faster, more overshoot)
+- Higher values → more I-like (slower, less overshoot)
+- Typical: 10-20 for most tips
+
+**Gain:**
+- Hardcoded to 2 in current implementation
+- Adjusts integration speed
+
+**Update Rate:**
+- Set by `PID_TIM_HZ` (typically 8 Hz)
+- Affects decay and integration rates
+
+### Algorithm 2: PID Control (Optional)
+
+Traditional PID control can be enabled with `TIP_CONTROL_PID` define.
+
+#### PID Implementation
+
+```cpp
+template <class T, T Kp, T Ki, T Kd, T integral_limit_scale> 
+struct PID {
+  T previous_error_term;
+  T integration_running_sum;
+  
+  T update(const T set_point, 
+           const T new_reading,
+           const TickType_t interval_ms,
+           const T max_output) {
+    
+    const T target_delta = set_point - new_reading;
+    
+    // Proportional term
+    const T kp_result = Kp * target_delta;
+    
+    // Integral term (time-weighted)
+    integration_running_sum += (target_delta * interval_ms * Ki) / 1000;
+    
+    // Anti-windup limiting
+    if (integration_running_sum > integral_limit_scale * max_output) {
+      integration_running_sum = integral_limit_scale * max_output;
+    } else if (integration_running_sum < -integral_limit_scale * max_output) {
+      integration_running_sum = -integral_limit_scale * max_output;
+    }
+    
+    T ki_result = integration_running_sum / 100;
+    
+    // Derivative term
+    T derivative = (target_delta - previous_error_term);
+    T kd_result = ((Kd * derivative) / (T)(interval_ms));
+    
+    // Summation
+    T output = kp_result + ki_result + kd_result;
+    
+    // Clamp output
+    if (output > max_output) {
+      output = max_output;
+    } else if (output < 0) {
+      output = 0;
+    }
+    
+    previous_error_term = target_delta;
+    return output;
+  }
+};
+```
+
+#### PID Tuning Parameters
+
+Define in `configuration.h`:
+
+```cpp
+#define TIP_CONTROL_PID      // Enable PID control
+#define TIP_PID_KP    10     // Proportional gain
+#define TIP_PID_KI    2      // Integral gain  
+#define TIP_PID_KD    1      // Derivative gain
+```
+
+**Kp (Proportional):**
+- Immediate response to error
+- Higher → faster response, more overshoot
+- Lower → slower response, less overshoot
+- Start with 10-20 for soldering irons
+
+**Ki (Integral):**
+- Eliminates steady-state error
+- Higher → faster integration, can cause oscillation
+- Lower → slower to eliminate offset
+- Start with 1-5 for soldering irons
+
+**Kd (Derivative):**
+- Responds to rate of change
+- Higher → more damping, can amplify noise
+- Lower → less damping
+- Start with 0.5-2, may not be needed
+
+#### When to Use PID
+
+**Consider PID if:**
+- You have very consistent thermal characteristics
+- Temperature sensing is low-noise
+- You need textbook control behavior
+
+**Use integrator if:**
+- Temperature measurements have high variance
+- Thermal inertia causes measurement artifacts
+- Default algorithm works well (most cases)
+
+## Thermal Runaway Detection
+
+Critical safety feature to detect hardware failures.
+
+### Detection Methods
+
+#### 1. Stuck Temperature Sensor
+
+```cpp
+if ((xTaskGetTickCount() - heatCycleStart) > (THERMAL_RUNAWAY_TIME_SEC * TICKS_SECOND)) {
+  if (tipTempMax > tiptempMin) {
+    TemperatureType_t delta = tipTempMax - tiptempMin;
+    if (delta < THERMAL_RUNAWAY_TEMP_C) {
+      // Temperature not changing during heating!
+      heaterThermalRunawayCounter++;
+    }
+  }
+}
+```
+
+If temperature doesn't change during extended heating:
+- Sensor disconnected
+- Sensor failed
+- Tip not connected
+
+**Parameters:**
+- `THERMAL_RUNAWAY_TIME_SEC` - Time to monitor (typically 10s)
+- `THERMAL_RUNAWAY_TEMP_C` - Minimum expected delta (typically 5°C)
+
+#### 2. Temperature Rising When Heater Off
+
+```cpp
+if (!thisCycleIsHeating && (getTipRawTemp(0) > (ADC_MAX_READING - 8))) {
+  // Temp reading at max while heater is off!
+  heaterThermalRunawayCounter++;
+}
+```
+
+Indicates:
+- Stuck MOSFET (heater always on)
+- ADC input shorted to voltage rail
+- Thermocouple amplifier failure
+
+#### 3. ADC Saturation
+
+```cpp
+if (getTipRawTemp(0) > (0x7FFF - 32)) {
+  // Too close to ADC maximum
+  x10WattsOut = 0;  // Disable heater immediately
+}
+```
+
+Preventive check for:
+- Sensor disconnection
+- Over-temperature
+- Hardware fault
+
+### Response to Thermal Runaway
+
+```cpp
+if (heaterThermalRunawayCounter > 8) {
+  x10WattsOut = 0;  // Force heater off
+  // Display error to user
+  // Require power cycle to reset
+}
+```
+
+Counter-based approach prevents false positives from transients.
+
+## Power Output Filtering
+
+### Slew Rate Limiting
+
+Optional feature to limit rate of power change:
+
+```cpp
+#ifdef SLEW_LIMIT
+if (x10WattsOut - x10WattsOutLast > SLEW_LIMIT) {
+  x10WattsOut = x10WattsOutLast + SLEW_LIMIT;
+}
+#endif
+```
+
+**Benefits:**
+- Reduces electrical noise
+- Decreases stress on MOSFET and tip
+- Smoother operation
+
+**Drawback:**
+- Slower response to large thermal loads
+
+Typically not needed for well-designed hardware.
+
+### Power Limits
+
+Multiple limits are applied:
+
+```cpp
+int32_t getX10WattageLimits() {
+  int32_t limit = availableW10(0);  // Supply capability
+  
+  // User-configured limit
+  if (getSettingValue(SettingsOptions::PowerLimit)) {
+    limit = min(limit, getSettingValue(SettingsOptions::PowerLimit) * 10);
+  }
+  
+  // Dynamic supply limit (from USB-PD negotiation)
+  if (powerSupplyWattageLimit) {
+    limit = min(limit, powerSupplyWattageLimit * 10);
+  }
+  
+  return limit;
+}
+```
+
+**Available Power Calculation:**
+```cpp
+int32_t availableW10(int32_t x10Volts) {
+  int32_t voltage = getInputVoltageX10(...);
+  int32_t resistance = TIP_RESISTANCE;
+  
+  // P = V^2 / R
+  return (voltage * voltage) / (resistance * 10);
+}
+```
+
+### Keep-Awake Pulses
+
+Prevents USB power banks from shutting off during low power:
+
+```cpp
+if (getSettingValue(SettingsOptions::KeepAwakePulse)) {
+  const TickType_t powerPulseWait = ...;
+  
+  if (xTaskGetTickCount() - lastPowerPulseStart > powerPulseWait) {
+    // Time for a pulse
+    lastPowerPulseStart = xTaskGetTickCount();
+    lastPowerPulseEnd = lastPowerPulseStart + pulseDuration;
+  }
+  
+  // Override low power with pulse level
+  if (x10WattsOut < pulseLevel && xTaskGetTickCount() < lastPowerPulseEnd) {
+    x10WattsOut = pulseLevel;
+  }
+}
+```
+
+Configurable via settings:
+- Pulse interval (e.g., every 2.5 seconds)
+- Pulse duration (e.g., 250 ms)
+- Pulse power level (e.g., 0.5W)
+
+## Temperature Measurement
+
+### Sampling Strategy
+
+**Key Challenge:** Heater element induces noise in sensor during heating pulse.
+
+**Solution:** Sample temperature when heater is OFF.
+
+```
+Heater On     Off      On       Off
+    |--------|    |---------|    |
+              ↑ Sample here  ↑
+```
+
+**Implementation:**
+- Timer triggers ADC conversion
+- Conversion occurs between heating pulses
+- Multiple samples averaged for noise reduction
+
+### Thermal Model
+
+**TipThermoModel Class:** `Core/Drivers/TipThermoModel.hpp`
+
+**Functions:**
+- Thermocouple linearization
+- Cold junction compensation  
+- Calibration offset application
+- Min/max temperature limiting
+
+**Usage:**
+```cpp
+TemperatureType_t currentTipTempInC = TipThermoModel::getTipInC(true);
+```
+
+## Tuning Guide
+
+### Using Integrator Control (Default)
+
+#### Step 1: Measure Thermal Mass
+
+1. Heat tip to 100°C above room temp
+2. Measure energy consumed (voltage × current × time)
+3. Calculate: `thermal_mass = energy / 100`
+4. Set `TIP_THERMAL_MASS` (in units of 0.1 J/°C)
+
+Alternatively, use typical values:
+- Small tips (TS80): 60-80
+- Medium tips (TS100, Pinecil): 100-120  
+- Large tips (MHP30): 200-300
+
+#### Step 2: Adjust Inertia
+
+Start with `TIP_THERMAL_INERTIA = 10`
+
+**If temperature oscillates:**
+- Increase inertia (try 20, 30, etc.)
+- Makes control more gradual
+
+**If response is too slow:**
+- Decrease inertia (try 5, 3, etc.)
+- Makes control more aggressive
+
+**If temperature drifts at setpoint:**
+- Thermal mass may be incorrect
+- Check calibration offset
+
+#### Step 3: Test Thermal Load Response
+
+1. Set temperature to 350°C
+2. Wait for stabilization
+3. Solder a large ground plane joint
+4. Observe recovery:
+   - Should return to setpoint in 2-5 seconds
+   - Minimal undershoot (< 20°C)
+   - No overshoot on recovery
+
+Adjust thermal mass and inertia to optimize recovery.
+
+### Using PID Control
+
+#### Step 1: Find Kp
+
+1. Set `Ki = 0`, `Kd = 0`
+2. Start with `Kp = 10`
+3. Test step response to setpoint
+4. Increase Kp until oscillation occurs
+5. Reduce Kp by 50%
+
+#### Step 2: Add Ki
+
+1. Start with `Ki = Kp / 10`
+2. Test for steady-state error elimination
+3. Increase Ki until oscillation or overshoot
+4. Reduce by 20-30%
+
+#### Step 3: Add Kd (Optional)
+
+1. Start with `Kd = Kp / 10`
+2. Look for reduced overshoot
+3. If noise increases, reduce or disable Kd
+
+Kd is often unnecessary for soldering irons.
+
+## Debugging Temperature Control
+
+### Enable Debug Output
+
+In `configuration.h`:
+```cpp
+#define DEBUG_UART_OUTPUT
+```
+
+Outputs to UART:
+- Current temperature
+- Target temperature
+- Power output
+- Control algorithm state
+
+### Plot Temperature Response
+
+1. Capture debug output to file
+2. Parse and plot:
+   - Temperature vs time
+   - Power output vs time
+   - Error vs time
+3. Look for:
+   - Overshoot (should be < 10°C)
+   - Settling time (should be < 5 seconds)
+   - Steady-state error (should be < 2°C)
+   - Oscillation (should be none)
+
+### Common Issues
+
+**Temperature Oscillates:**
+- Integrator: Increase `TIP_THERMAL_INERTIA`
+- PID: Reduce `Kp`, reduce `Ki`
+
+**Slow to Reach Setpoint:**
+- Integrator: Increase `TIP_THERMAL_MASS`, decrease inertia
+- PID: Increase `Kp`
+
+**Overshoots Setpoint:**
+- Integrator: Increase `TIP_THERMAL_INERTIA`
+- PID: Reduce `Kp`, add `Kd`
+
+**Steady-State Offset:**
+- Integrator: Decrease `TIP_THERMAL_INERTIA`
+- PID: Increase `Ki`
+- Check calibration offset
+
+**Poor Thermal Load Recovery:**
+- Increase `TIP_THERMAL_MASS`
+- Check power limit settings
+- Verify power supply capacity
+
+## Advanced Topics
+
+### Adaptive Control
+
+Future enhancement ideas:
+- Detect tip size from thermal mass
+- Adjust gains based on setpoint temperature
+- Learn from user's soldering patterns
+
+### Gain Scheduling
+
+Different gains for different temperature ranges:
+```cpp
+if (set_point < 200) {
+  // Lower gains for low temp
+} else if (set_point > 400) {
+  // Higher gains for high temp
+}
+```
+
+Not currently implemented but could improve performance.
+
+### Feed-Forward Control
+
+Predict power needs based on:
+- Rate of temperature change
+- Recent thermal load history
+- Ambient temperature
+
+Would reduce temperature droop during soldering.
+
+## References
+
+- [PID Controller on Wikipedia](https://en.wikipedia.org/wiki/PID_controller)
+- [Control Systems Engineering Textbook](https://www.amazon.com/Control-Systems-Engineering-Norman-Nise/dp/1118170512)
+- `Core/Threads/PIDThread.cpp` - Implementation source
+- `Core/BSP/*/configuration.h` - Device-specific tuning
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Overall firmware architecture
+  </Card>
+  <Card title="BSP Layer" icon="microchip" href="/development/bsp">
+    Hardware abstraction details
+  </Card>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Build firmware with custom tuning
+  </Card>
+  <Card title="Porting" icon="plus" href="/development/porting">
+    Port to new hardware
+  </Card>
+</CardGroup>

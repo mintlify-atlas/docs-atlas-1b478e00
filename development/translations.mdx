@@ -1,0 +1,310 @@
+---
+title: Translation Guide
+description: How to add or update language translations for IronOS
+---
+
+IronOS supports multiple languages through JSON configuration files. All translations are stored in the `Translations/` directory and can be contributed via pull requests.
+
+## Translation Files
+
+Each language has its own JSON file in the format:
+
+```
+Translations/translation_LANG_CODE.json
+```
+
+For example:
+- `translation_EN.json` - English
+- `translation_DE.json` - German  
+- `translation_ZH_CN.json` - Simplified Chinese
+- `translation_FR.json` - French
+
+## Adding a New Translation
+
+### 1. Create Translation File
+
+Copy the English translation as a template:
+
+```bash
+cd Translations
+cp translation_EN.json translation_NEW.json
+```
+
+Replace `NEW` with your language code (e.g., `IT` for Italian, `PT` for Portuguese).
+
+### 2. Edit Translation File
+
+The JSON file contains key-value pairs for all translatable strings. The structure looks like:
+
+```json
+{
+  "languageCode": "EN",
+  "languageName": "English",
+  "messages": {
+    "SettingsCalibrationDone": "Calibration done!",
+    "SettingsCalibrationWarning": "Ensure the tip is at room temperature before proceeding!",
+    "SettingsResetWarning": "Are you sure to reset settings to default values?"
+  },
+  "characters": {
+    "SettingRightChar": "R",
+    "SettingLeftChar": "L",
+    "SettingAutoChar": "A"
+  }
+}
+```
+
+**Important fields:**
+- `languageCode` - Your language code (must match filename)
+- `languageName` - Native name of the language
+- `messages` - All translatable UI strings
+- `characters` - Single character abbreviations
+
+### 3. Font Support
+
+IronOS uses bitmap fonts. If your language requires characters not in the base font:
+
+1. The translation system will automatically include required glyphs from the Wen Quan Yi font
+2. For languages with large character sets (CJK), compression is automatically applied
+3. Font maps are generated during the build process
+
+### 4. Test Your Translation
+
+Build firmware with your new translation:
+
+```bash
+cd source
+make -j8 model=Pinecil firmware-NEW
+```
+
+Replace `NEW` with your language code and `Pinecil` with your device model.
+
+### 5. Update Translation Files
+
+After editing translations, regenerate the translation files:
+
+```bash
+cd Translations
+python3 make_translation.py
+```
+
+This will:
+- Generate font maps for all languages
+- Validate translation JSON files
+- Create required C++ source files
+
+### 6. Update Documentation
+
+If you've edited translation definitions, also update the settings menu documentation:
+
+```bash
+cd Translations  
+python3 gen_menu_docs.py
+```
+
+## Updating Existing Translations
+
+### 1. Edit the JSON File
+
+Open the appropriate `translation_XX.json` file and update the strings you want to change.
+
+### 2. Test Your Changes
+
+Build and test the firmware:
+
+```bash
+cd source
+make -j8 model=YOUR_MODEL firmware-YOUR_LANG
+```
+
+### 3. Validate Changes
+
+Run the translation test:
+
+```bash
+cd Translations
+python3 make_translation_test.py
+```
+
+## Contributing Translations
+
+### Via Pull Request (Recommended)
+
+1. Fork the [IronOS repository](https://github.com/Ralim/IronOS)
+2. Create a new branch for your translation:
+   ```bash
+   git checkout -b add-translation-XX
+   ```
+3. Add or update the translation JSON file
+4. Commit your changes:
+   ```bash
+   git add Translations/translation_XX.json
+   git commit -m "Add XX translation" 
+   ```
+5. Push to your fork and create a pull request
+6. GitHub Actions will automatically build firmware with your translation
+
+### Testing Without Local Build Environment
+
+If you don't want to set up the build environment:
+
+1. Fork the repository on GitHub
+2. Edit the translation file directly in GitHub's web interface
+3. Create a pull request
+4. GitHub Actions will build the firmware for you
+5. Download the artifacts to test on your device
+
+<Note>
+All translation contributions must be submitted via GitHub pull requests. Translations sent via issues, discussions, or email will not be accepted.
+</Note>
+
+## Translation Guidelines
+
+### String Length
+
+Be mindful of display space constraints:
+- Most devices have small OLED displays (96x16 or 128x32 pixels)
+- Shorter strings are better
+- Test on actual hardware if possible
+
+### Consistency
+
+Maintain consistent terminology:
+- Use the same terms for the same concepts throughout
+- Check other translations for reference
+- Follow conventions of your language
+
+### Technical Terms
+
+For technical terms:
+- Use commonly understood terms in your language
+- When in doubt, include the English term in parentheses
+- Some abbreviations may be better left in English (USB, PID, PWM)
+
+### Character Encoding
+
+JSON files must be UTF-8 encoded:
+- Use native characters (don't use escape sequences like \\u)
+- Ensure your editor saves files as UTF-8
+
+## Translation File Structure
+
+### Messages
+
+The `messages` object contains all UI strings:
+
+```json
+"messages": {
+  "SettingsCalibrationDone": "Calibration done!",
+  "SettingsCalibrationWarning": "Ensure tip at room temperature!",
+  "SettingsResetWarning": "Reset to defaults?",
+  "UVLOWarningString": "LOW VOLT",
+  "UndervoltageString": "Undervoltage",
+  "ThermalRunawayString": "THERMAL RUNAWAY"
+}
+```
+
+### Characters
+
+The `characters` object contains single-character abbreviations:
+
+```json
+"characters": {
+  "SettingRightChar": "R",
+  "SettingLeftChar": "L",  
+  "SettingAutoChar": "A",
+  "SettingFastChar": "F",
+  "SettingSlowChar": "S"
+}
+```
+
+### Menu Items
+
+Settings menu items have short and long descriptions:
+
+```json
+"menuGroups": {
+  "solderingMenu": {
+    "displayName": "Soldering",
+    "settings": {
+      "SetTemperature": {
+        "label": "Temp",
+        "description": "Soldering temperature"
+      }
+    }
+  }
+}
+```
+
+## Common Issues
+
+### Missing Characters in Display
+
+If some characters don't display:
+1. The font may not include the glyph
+2. Check if the build process reports font warnings
+3. The WenQuanYi font should cover most languages
+
+### Build Errors
+
+If the build fails with translation errors:
+1. Validate JSON syntax using a JSON validator
+2. Ensure all required keys are present
+3. Check that `languageCode` matches the filename
+4. Run `make_translation_test.py` to identify issues
+
+### String Too Long
+
+If a string doesn't fit on screen:
+1. Use abbreviations where appropriate
+2. Shorten the translation
+3. Test on actual hardware to verify readability
+
+## Language-Specific Notes
+
+### CJK Languages (Chinese, Japanese, Korean)
+
+CJK languages require special handling:
+- Font compression is automatically applied
+- Multi-language builds work best with compression enabled
+- Use simplified characters where possible to save space
+
+### RTL Languages (Arabic, Hebrew)
+
+RTL language support is limited:
+- Display drivers currently assume LTR text flow
+- Contributions to improve RTL support are welcome
+
+### Special Characters
+
+For languages with special characters:
+- Use native Unicode characters in JSON
+- Don't use HTML entities or escape sequences
+- The build system handles character encoding
+
+## Translation Testing Checklist
+
+- [ ] All menu items are translated
+- [ ] Strings fit on the display without truncation
+- [ ] Terminology is consistent throughout
+- [ ] Special characters display correctly
+- [ ] JSON file is valid and properly formatted
+- [ ] Build completes without errors
+- [ ] Firmware runs on actual hardware
+- [ ] All settings screens are readable
+
+## Resources
+
+- [Translation Files on GitHub](https://github.com/Ralim/IronOS/tree/master/Translations)
+- [English Translation Reference](https://github.com/Ralim/IronOS/blob/master/Translations/translation_EN.json)
+- [Translation Definitions](https://github.com/Ralim/IronOS/blob/master/Translations/translations_definitions.json)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building from Source" icon="hammer" href="/development/building">
+    Learn how to build firmware with your translation
+  </Card>
+  <Card title="Contributing" icon="code-branch" href="/development/overview">
+    Read the full contribution guide
+  </Card>
+</CardGroup>

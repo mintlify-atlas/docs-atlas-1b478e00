@@ -1,0 +1,231 @@
+---
+title: Power Management
+description: Power management, optimization, and performance characteristics
+---
+
+IronOS-powered soldering irons use PWM-controlled resistive heating elements. Understanding the power delivery system is essential for optimizing performance and troubleshooting power-related issues.
+
+## Power Fundamentals
+
+Soldering irons function as a resistor connected to your power source through an electronically-controlled switch. The electronics can only turn the heating element **on** or **off** - they cannot vary the power directly.
+
+<Warning>
+**Critical Insight**: Power delivered to the tip is 100% controlled by supply voltage. Higher voltage = Higher performance.
+</Warning>
+
+### Basic Electrical Equations
+
+When the switch is on:
+
+```
+P (watts) = V (volts) × I (amps)
+I (amps) = V (volts) ÷ R (ohms)
+
+Combining these:
+P (watts) = V² ÷ R (ohms)
+```
+
+<Note>
+**Key Takeaway**: Power is proportional to voltage **squared**. Doubling voltage quadruples power delivery.
+</Note>
+
+## Tip Resistance Values
+
+Tip resistance is a fixed constant that determines power characteristics:
+
+| Device | Tip Type | Resistance |
+|--------|----------|------------|
+| Pinecil | Short tip | 6.2 Ω |
+| Pinecil / TS100 | Long tip | 8.0 Ω |
+| TS80(P) | Standard | 4.5 Ω |
+
+<Warning>
+Pinecil and TS100 perform poorly on 12V power supplies and may display a **Thermal Runaway** warning indicating insufficient power delivery.
+</Warning>
+
+## Power Output Calculator
+
+Use an [Ohm calculator](https://www.rapidtables.com/calc/electric/power-calculator.html#dc) to determine power output for your configuration.
+
+### Power Output Table
+
+| Power Source | Voltage | Tip Ω | Current | Power Output |
+|--------------|---------|-------|---------|-------------|
+| USB QC3.0 | 9V | 4.5 Ω | 2.0A | **18W** |
+| USB-C PD | 12V | 4.5 Ω | 3.0A | **32W** |
+| USB-C PD | 20V | 8.0 Ω | 2.5A | **50W** |
+| USB-C PD | 20V | 6.2 Ω | 3.2A | **64W** |
+| DC Barrel | 24V | 8.0 Ω | 3.0A | **72W** |
+| DC Barrel | 24V | 6.2 Ω | 3.8A | **92W** |
+| EPR PD3.1 | 28V | 8.0 Ω | 3.5A | **98W** |
+| EPR PD3.1 | 28V | 6.2 Ω | 4.5A | **126W** |
+
+<Tip>
+**Performance Recommendation**: For optimal performance, use 20V USB-PD or higher voltage sources. 28V EPR PD3.1 provides maximum power delivery.
+</Tip>
+
+## Output Control System
+
+### Hardware Components
+
+1. **P-MOSFET**: Switches power to the tip
+2. **Transistor circuit**: Controls the MOSFET
+3. **MCU (STM32)**: Runs PID control loop and generates PWM signal
+
+### Control Flow
+
+```
+PID Controller → PWM Signal → Transistor Circuit → P-MOSFET → Tip Power
+```
+
+The MCU controls PWM output proportional to the PID control loop output, regulating tip temperature.
+
+## Temperature Measurement Timing
+
+To measure the tiny thermocouple voltage, the output must be turned off temporarily:
+
+1. **FET turns off** (heating stops)
+2. **Recovery period**: Tip capacitance discharges, op-amp exits saturation
+3. **ADC samples**: 8 rapid samples of op-amp output
+4. **PWM resumes**: Heating continues
+
+This creates a **dead time** in the output signal during each measurement.
+
+<Note>
+See [Temperature Control](/advanced/temperature-control#complexity-of-measurement) for detailed information on measurement complexity.
+</Note>
+
+### Sampling Tradeoff
+
+The firmware balances two competing needs:
+
+- **More frequent sampling**: Better temperature stability
+- **Less frequent sampling**: Higher maximum power delivery
+
+## Soldering Iron Load Characteristics
+
+Soldering irons present a unique challenge for power supplies:
+
+<Warning>
+**Rapid Load Changes**: Unlike laptops or phones that gently ramp power, soldering irons switch rapidly from 0 to full power and back. This can trip protection circuits on some power supplies.
+</Warning>
+
+### Load Pattern
+
+```
+Typical Device:  [====== Gradual Ramp ======]
+Soldering Iron:  [█████ ON] [   OFF   ] [█████ ON]
+```
+
+This rapid switching can cause issues with:
+
+- Multi-port chargers at full capacity
+- Budget power supplies with sensitive protection
+- "Smart" chargers with complex protocol implementations
+
+## Power Source Recommendations
+
+### Ideal Power Supplies
+
+<Tip>
+**Recommended**: Normal, boring 60-100W PD supply. Avoid over-marketed multi-port adapters.
+</Tip>
+
+- Single-port dedicated supply
+- 60W minimum for TS100/Pinecil
+- 100W for optimal performance with short tips
+- Clean PD implementation (avoid "smart" chargers)
+
+### Multi-Port Adapter Warning
+
+<Warning>
+Watch out for misleading marketing:
+
+**Example**: "65W" adapter with:
+- Port 1: 45W
+- Port 2: 20W
+
+**Reality**: Cannot deliver 65W to a single port. Maximum per-port delivery is what matters.
+</Warning>
+
+### Protocol Compatibility
+
+Smarter chargers implementing multiple protocols may have quirks:
+
+- Shortcuts in PD implementation
+- Compatibility issues with rapid load changes
+- Protocol switching delays
+
+<Info>
+For supported power standards and protocols, see [Power Sources documentation](https://ralim.github.io/IronOS/PowerSources/).
+</Info>
+
+## PWM Regulation Details
+
+The P-MOSFET switching is controlled via PWM (Pulse Width Modulation):
+
+- **High duty cycle**: More heating power
+- **Low duty cycle**: Less heating power
+- **0% duty cycle**: Temperature measurement period
+
+### PID Control Integration
+
+The PID controller calculates required power based on:
+
+1. Current temperature (measured)
+2. Target temperature (setpoint)
+3. Rate of change (derivative)
+4. Accumulated error (integral)
+
+Output is translated to PWM duty cycle for the MOSFET.
+
+<Note>
+See [Temperature Control](/advanced/temperature-control) for PID tuning philosophy and implementation details.
+</Note>
+
+## Thermal Runaway Protection
+
+IronOS includes thermal runaway detection to protect against:
+
+- Insufficient power supply capacity
+- Damaged heating elements
+- Thermal coupling issues
+
+### When it Triggers
+
+The firmware monitors:
+
+- Time to reach target temperature
+- Rate of temperature increase
+- Maximum power delivery vs. measured heating
+
+If heating is insufficient despite full power delivery, thermal runaway protection activates.
+
+<Warning>
+**Common Cause**: Using 12V power supply with 8Ω tip (only ~18W available).
+</Warning>
+
+## Optimization Strategies
+
+### Maximum Performance
+
+1. **Use highest voltage available**: 28V EPR > 24V DC > 20V PD > 12V
+2. **Choose appropriate tip**: Lower resistance = higher power (if supply can handle current)
+3. **Quality cables**: E-marked cables for high-power PD, thick wires for DC
+4. **Single-port supply**: Dedicated power supply without port sharing
+
+### Battery Operation
+
+When using battery packs:
+
+- Check sustained discharge rating (not peak)
+- Account for voltage sag under load
+- Monitor battery temperature during use
+- Use batteries rated for high-current discharge
+
+## Resources
+
+- [PWM Explained](https://www.digikey.com/en/blog/pulse-width-modulation)
+- [Ohm's Law Calculator](https://www.rapidtables.com/calc/electric/power-calculator.html#dc)
+- [Temperature Measurement](/advanced/temperature-control)
+- [USB-PD Debugging](/advanced/debugging-pd)

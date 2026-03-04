@@ -1,0 +1,161 @@
+---
+title: Hardware Issues
+description: Known hardware issues and troubleshooting steps
+---
+
+While we aim for everything to work perfectly, hardware issues can occur. This page covers common problems and their solutions.
+
+<Warning>
+Please do not email maintainers directly - these will generally be ignored. Keep discussions on GitHub issues or the discussions page so the whole community can help.
+</Warning>
+
+## No Accelerometer Detected
+
+### Previously Working Iron
+
+If your iron was previously working:
+
+1. Check [currently open and recently closed issues](https://github.com/Ralim/IronOS/issues) for similar reports
+2. Try rolling back to an earlier firmware release to test if this is a new bug
+3. If no existing issues found, open a new issue with details
+
+### New Iron
+
+For a new iron not detecting accelerometer:
+
+- Check existing issues first
+- Vendor may have changed accelerometer model without warning (has happened before)
+- Support should come shortly once identified
+- Slim chance accelerometer is DOA and needs replacement
+
+<Info>
+This warning will only be shown the first few times until settings are reset.
+</Info>
+
+## No USB-PD IC Detected
+
+This error generally means:
+
+- Firmware issue has occurred, or
+- FUSB302 chip not responding as expected
+
+### Troubleshooting Steps
+
+1. **Roll back firmware**: Try earlier release to confirm if issue persists
+2. **Contact support**: If problem continues, device may need repair
+   - Use seller protection/support if available
+   - Attempt IC replacement yourself if warranty expired
+3. **Hardware info**: Both TS80P and Pinecil use FUSB302 chip
+
+<Info>
+This warning will only be shown the first few times until settings are reset.
+</Info>
+
+## No Tip Detected
+
+If tip is not being detected, the heater element inside has likely been damaged.
+
+### Common Causes
+
+- Over-temperature damage
+- Physical damage from being dropped
+- Manufacturing defect
+
+### Diagnosis
+
+Measure resistance across tip contacts using multimeter:
+
+- **Expected**: 4-10 ohms
+- **Problem**: Higher than 10 ohms generally indicates damaged heater coil
+
+<Warning>
+The heater coil is part of the temperature measurement circuit. If damaged, neither heating nor temperature sensing will work.
+</Warning>
+
+### Tip Resistance Reference
+
+- **6.2Ω**: Pine64 short tip
+- **8.0Ω**: TS100/Pinecil long tip
+- **4.5Ω**: TS80(P)
+
+## Iron Won't Heat Up & Shows High Temperature
+
+This issue is related to cold junction compensation temperature sensor problems.
+
+### Diagnosis
+
+Check the Rtip and CHan numbers in [Debug Menu](/user-guide/debug-menu):
+
+- **Symptom**: Extremely high CHan value
+- **Cause**: Problem with cold junction compensation temperature sensor
+
+### Pinecil V1 Specific
+
+Inspect area near **U10** (TMP36 sensor):
+
+1. Visual inspection of U10 solder joints
+2. Attempt to reflow/resolder TMP36 chip
+3. May correct weak solder joint issue
+
+[Reference issue #1234](https://github.com/Ralim/IronOS/issues/1234)
+
+### Firmware Version Note
+
+If worked on older firmware but not on 2.16+:
+
+- **Likely cause**: Weak solder joints
+- **Reason**: Newer firmware runs ADC faster for tighter temperature control
+- **Normally**: TMP36 output is powerful enough to keep up
+- **Problem**: Weak or cold solder joint can't handle faster ADC sampling
+
+### Additional Checks
+
+If reflowing temperature sensor doesn't resolve issue:
+
+1. Inspect pins on main MCU
+2. Try gently squeezing pins to board while watching CHan value
+3. May indicate weak MCU connection
+
+### Other Devices
+
+For non-Pinecil devices:
+
+1. Follow same logic
+2. Locate temperature sensor on your specific device
+3. Check schematics for sensor location
+4. Inspect and reflow solder joints
+
+## General Troubleshooting Tips
+
+### Before Opening Issue
+
+1. **Search existing issues**: Problem may already be documented
+2. **Test older firmware**: Helps determine if regression or hardware fault
+3. **Check hardware**: Visual inspection for obvious damage
+4. **Verify power source**: Ensure adequate voltage/current for your device
+5. **Read documentation**: Review relevant docs for your hardware
+
+### Information to Provide
+
+ When opening an issue, include:
+
+- **Device model**: Exact iron model (TS100, Pinecil V2, etc.)
+- **Firmware version**: Current and previously working versions
+- **Power source**: Charger/power bank model and specifications
+- **Debug readings**: Rtip, CHan, other relevant debug values
+- **Steps to reproduce**: What you were doing when issue occurred
+- **Photos**: Clear images of issue or hardware if relevant
+
+### Warranty & Repairs
+
+- **Under warranty**: Contact seller/manufacturer first
+- **Out of warranty**: Community can help with DIY repairs
+- **Replacement parts**: FUSB302, accelerometers, and other ICs available from electronics suppliers
+- **Schematics**: Available for Pinecil and S60; helps with repairs
+
+## Getting Help
+
+- **GitHub Issues**: [IronOS Issues](https://github.com/Ralim/IronOS/issues)
+- **GitHub Discussions**: [IronOS Discussions](https://github.com/Ralim/IronOS/discussions)
+- **Documentation**: Check other docs sections for specific topics
+- **Community**: Other users often have experience with similar issues

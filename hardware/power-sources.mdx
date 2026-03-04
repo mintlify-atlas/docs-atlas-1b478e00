@@ -1,0 +1,111 @@
+---
+title: Power Sources
+description: Compatible chargers, power banks, and battery packs for IronOS devices
+---
+
+Supported IronOS hardware uses different power sources with different standards and protocols (QC/PD/etc). This information is collected from real community testing since some chargers may not fully support what's declared on the box.
+
+<Warning>
+This is not advertising but first-hand experience from real users.
+</Warning>
+
+## Quick Charge 3.0 (QC3)
+
+### Compatible Devices for TS80/TS80P
+
+The following devices have been tested with TS80 series irons:
+
+| Device Name | Stock FW | IronOS FW |
+|-------------|:--------:|:---------:|
+| Anker PowerCore II Slim 10000 Powerbank | Not Working | Good |
+| [Aukey 26.5/30 Ah Powerbank (PB-Y3)](https://www.aukey.com/products/30000mah-power-bank-with-quick-charge-3-0/) | OK** (15sec t/o) | OK** (15sec t/o) |
+| Aukey QC3 Charger | Good | Only 5V |
+| [Aukey QC3 Charging Station (PA-T11)](https://www.aukey.com/products/6-port-charging-station-with-quick-charge-3-0-pa-t11/) | Good | Good |
+| Besiter 20000mah QC3 | Not Working | Only 5V |
+| BlitzWolf BW-P5 | Not Working* | Unknown |
+| BlitzWolf BW-PF2 | OK** (10sec t/o) | OK** (10sec t/o) |
+| BlitzWolf BW-PL3 | Low Voltage | OK |
+| BlitzWolf BW-PL4 | Unknown | Not Working |
+| BlitzWolf BW-S6 | Unknown | OK |
+| Charmast 20800 mAh QC 3.0 | Low Voltage* | Good |
+| Clas Ohlson Powerbank USB-C 10050 mAh | Unknown | OK** |
+| [Cygnett 20,000mAh USB-C](https://www.cygnett.com/products/20-000mah-usb-c-power-bank-in-black)| Not Working | Good |
+| [HAME H13D](https://www.amazon.com/dp/B07GWMFW82) 10000mAh PD/QC3.0 | OK** (30sec t/o) | OK** (30sec t/o?) |
+| HIPER 10000 mAh 18W PD+QC3.0 (MPX10000) | Low Voltage | OK** (30sec t/o) |
+| [iMuto Portable Charger 30000mAh](https://www.amazon.com/gp/product/B01MXCMGB8/ref=ppx_yo_dt_b_asin_title_o05_s00) | Low Voltage | Good |
+| ISDT BG-8S | Good | Good |
+| [iVoler Quick Charge 3.0 USB C 30W 2-Port USB](https://www.amazon.de/dp/B077P8ZZB8/) | Good | Good |
+| [imuto X6L Pro 30000 mah](https://www.amazon.com/dp/B01MXCMGB8) | Not Working | Bad |
+| Interstep 10000 mAh 18W PD+QC3.0+FCP+AFC (MPX10000) | Good | OK** (30sec t/o) |
+| Jackery Black 420 | Low Voltage | Good |
+| Kogan Premium 80W 5 Port USB Charger| Low Voltage | Good |
+| Nokia AD-18WE | Unknown | OK |
+| [Omars 2000mAh USB-C PD+QC3.0 (OMPB20KBUPLT / OMPB20KPLT)](https://www.amazon.com/dp/B07CMLVR6C) | OK** (20sec t/o) | Unknown |
+| Polaroid PS100 Powerbank | Good | Good |
+| Xiaomi 10000mAh Mi Power Bank Pro (PLM03ZM) | Good | Unknown |
+| Xiaomi 10000mAh Mi Power Bank 2i (PLM09ZM) | Good | Good |
+| Xiaomi 20000mAh Mi Power Bank 3 (PLM07ZM) | Unknown | Good Type A, Bad Type C |
+| [ZeroLemon ToughJuice](https://www.amazon.com/dp/B01CZR3LT2/) 30000mAh PD/QC2.0 | OK** (20sec t/o) | OK** (20sec t/o?) |
+| [URUAV XT-60 to USB module](https://www.banggood.com/URUAV-XT-60-to-USB-Charger-Converter-Support-3S-6S-LiPo-Battery-10_5V-32V-Input-3V-20V-Output-45W-Max-Fast-Charging-Adapter-For-RC-Racing-Drone-p-1475876.html) | Unknown | Good |
+
+\* Need further tests on newer firmware
+
+\*\* Most Power Banks shut down if current draw drops below 50mA, assuming charging is complete and avoiding overcharging. IronOS is designed to avoid this until it enters Zzzz mode.
+
+### DIY QC3.0 Solutions
+
+You can build your own QC3.0 power source using:
+
+- [QC2/3 DIY module](https://www.tindie.com/products/soubitos/qualcomm-qc2-3-diy-8-32vin-36-12vout-3a-max/) with 3S lithium packs or 8-32V input
+- [Alternate buck module](https://www.banggood.com/DC-Buck-Module-12V24V-to-QC3_0-Single-USB-Mobile-Charging-Board-p-1310585.html) with positive reviews
+
+<Warning>
+**DISCLAIMER:** We do not hold any responsibility for accidents that happen when building your own QC3.0 power source.
+</Warning>
+
+## USB Power Delivery (PD)
+
+The following devices are compatible with hardware requiring Power Delivery support (≥30W). Successfully tested with TS80P in PD mode.
+
+### Important Requirements
+
+- PD can only be provided through **USB-C to USB-C** cable
+- Not only the charger but the **cable itself** must be capable of carrying higher wattages
+
+### Compatible Devices for TS80P
+
+| Device Name | IronOS FW |
+|-------------|:---------:|
+| Traver Charger QC09 (45W max)* | OK |
+| Xiaomi AD65GEU Mi 65W Fast Charger with GaN Tech (AD65GEU, 65W max) | OK |
+
+\* Available as an option with TS80P from [official store](https://aliexpress.com/item/4000764937427.html) or [NovelLife store separately](https://aliexpress.com/item/4001316262433.html) on AliExpress.
+
+<Warning>
+DO NOT BUY cheap "fast chargers with QC/PD support" for a few dollars online (less than ~$10). Reviews show they are often fake - even if lucky, you'll likely get 5V/1A max.
+</Warning>
+
+## Power Calculations
+
+Power delivered to the tip is determined by voltage and tip resistance:
+
+| Type       | Volts| / | Tip Ω | = |  Amps | * | Volts | = | Watts |
+| :--------: | :--: |:-:| :---: |:-:|:-----:|:-:| :---: |:-:|:-----:|
+| USB QC3.0  | 9V   | / | 4.5 Ω | = |  2.0A | * |  9V   | = |  18W  |
+| USB-C PD   | 12V  | / | 4.5 Ω | = |  3.0A | * |  12V  | = |  32W  |
+| USB-C PD   | 20V  | / | 8.0 Ω | = |  2.5A | * |  20V  | = |  50W  |
+| USB-C PD   | 20V  | / | 6.2 Ω | = |  3.2A | * |  20V  | = |  64W  |
+| DC Barrel  | 24V  | / | 8.0 Ω | = |  3.0A | * |  24V  | = |  72W  |
+| DC Barrel  | 24V  | / | 6.2 Ω | = |  3.8A | * |  24V  | = |  92W  |
+| EPR PD3.1  | 28V  | / | 8.0 Ω | = |  3.5A | * |  28V  | = |  98W  |
+| EPR PD3.1  | 28V  | / | 6.2 Ω | = |  4.5A | * |  28V  | = |  126W |
+
+Use an [Ohm calculator](https://www.rapidtables.com/calc/electric/power-calculator.html#dc) to quickly derive watts for your configuration.
+
+## Best Practices
+
+1. **Use highest voltage possible**: Power delivery is proportional to voltage squared (P = V² ÷ Ω)
+2. **PD adapters recommended**: Allows iron to know supply limitations and prevent over-current
+3. **Check cable ratings**: Ensure USB-C cables are rated for the wattage you need
+4. **Avoid ultra-cheap chargers**: Spend at least $10 for reliable performance
+5. **Test power banks**: Some shut down below 50mA draw; IronOS handles this in most cases
