@@ -43,25 +43,29 @@ This guide will help you install IronOS firmware on your device and understand t
 For detailed installation notes specific to your device, please refer to the appropriate flashing guide:
 
 <CardGroup cols={2}>
-  <Card title="MHP30" icon="heat" href="https://ralim.github.io/IronOS/Flashing/MHP30">
+  <Card title="MHP30" icon="heat" href="/flashing/mhp30">
     Mini Hot Plate flashing guide
   </Card>
-  <Card title="Pinecil V1" icon="microchip" href="https://ralim.github.io/IronOS/Flashing/Pinecil%20V1/">
+  <Card title="Pinecil V1" icon="microchip" href="/flashing/pinecil-v1">
     Pine64 Pinecil V1 flashing guide
   </Card>
-  <Card title="Pinecil V2" icon="microchip" href="https://ralim.github.io/IronOS/Flashing/Pinecil%20V2/">
+  <Card title="Pinecil V2" icon="microchip" href="/flashing/pinecil-v2">
     Pine64 Pinecil V2 flashing guide
   </Card>
-  <Card title="TS80 / TS80P" icon="screwdriver-wrench" href="https://ralim.github.io/IronOS/Flashing/TS80%28P%29/">
+  <Card title="TS80 / TS80P" icon="screwdriver-wrench" href="/flashing/ts80p">
     Miniware TS80/TS80P flashing guide
   </Card>
-  <Card title="TS100" icon="screwdriver-wrench" href="https://ralim.github.io/IronOS/Flashing/TS100">
+  <Card title="TS100" icon="screwdriver-wrench" href="/flashing/ts100">
     Miniware TS100 flashing guide
   </Card>
-  <Card title="TS101" icon="screwdriver-wrench">
-    Miniware TS101 flashing guide
+  <Card title="TS101" icon="screwdriver-wrench" href="/flashing/ts100">
+    Miniware TS101 (uses TS100 method)
   </Card>
 </CardGroup>
+
+<Info>
+**TS101, S60, S60P, and T55**: These devices use the same DFU bootloader flashing method as TS100/TS80P. Follow the TS100 or TS80P guide respectively.
+</Info>
 
 <Note>
 **Update Recommendation**: It is recommended to update to the newest stable release when you first receive your device to ensure you are up to date.
@@ -75,7 +79,7 @@ When you first power on your device after flashing IronOS:
 You may see a warning about system settings being reset. **Do not panic** - this is completely normal! This message appears when the internal structure has changed between firmware versions.
 </Warning>
 
-If you receive warnings about the accelerometer or USB-PD not being detected, please see the [hardware issues documentation](https://ralim.github.io/IronOS/HardwareIssues/).
+If you receive warnings about the accelerometer or USB-PD not being detected, please see the [hardware issues documentation](/troubleshooting/hardware-problems).
 
 ## The Home Screen
 
@@ -93,7 +97,7 @@ The home screen (also called the idle screen) is the landing page of the firmwar
   - Power plug icon for AC adapters
 
 <Warning>
-If you see an **(X)** where the soldering iron icon should be, the firmware cannot detect the tip. Try removing and reinstalling the tip. If the issue persists, see the [hardware issues section](https://ralim.github.io/IronOS/HardwareIssues/).
+If you see an **(X)** where the soldering iron icon should be, the firmware cannot detect the tip. Try removing and reinstalling the tip. If the issue persists, see the [hardware issues section](/troubleshooting/hardware-problems).
 </Warning>
 
 ### Screen Rotation
@@ -273,7 +277,7 @@ This resets all menu items to defaults while keeping the same firmware version.
   <Card title="Debug Menu" icon="bug" href="https://ralim.github.io/IronOS/DebugMenu/">
     Learn about debugging and diagnostics
   </Card>
-  <Card title="Hardware Issues" icon="triangle-exclamation" href="https://ralim.github.io/IronOS/HardwareIssues/">
+  <Card title="Hardware Issues" icon="triangle-exclamation" href="/troubleshooting/hardware-problems">
     Troubleshooting hardware problems
   </Card>
   <Card title="Power Management" icon="battery-full" href="https://ralim.github.io/IronOS/Power/">
