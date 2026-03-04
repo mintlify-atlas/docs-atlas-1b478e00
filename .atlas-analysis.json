@@ -1,0 +1,140 @@
+{
+  "projectType": "general",
+  "projectName": "IronOS",
+  "projectDescription": "Open source flexible firmware for soldering irons and hot plates with PID temperature control, USB-PD/QC support, and extensive customization options.",
+  "theme": "aspen",
+  "primaryColor": "#FF6B35",
+  "lightColor": "#FF8C61",
+  "darkColor": "#D95530",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "getting-started",
+              "supported-hardware"
+            ]
+          },
+          {
+            "group": "Installation",
+            "pages": [
+              "flashing/overview",
+              "flashing/pinecil-v2",
+              "flashing/pinecil-v1",
+              "flashing/mhp30",
+              "flashing/ts80p",
+              "flashing/ts100"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "user-guide/controls",
+              "user-guide/menu",
+              "user-guide/settings",
+              "user-guide/boot-logo",
+              "user-guide/debug-menu"
+            ]
+          },
+          {
+            "group": "Hardware",
+            "pages": [
+              "hardware/overview",
+              "hardware/power-sources",
+              "hardware/hall-sensor",
+              "hardware/issues"
+            ]
+          },
+          {
+            "group": "Advanced Topics",
+            "pages": [
+              "advanced/bluetooth",
+              "advanced/temperature-control",
+              "advanced/power-management",
+              "advanced/debugging-pd"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/common-issues",
+              "troubleshooting/hardware-problems"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/overview",
+              "development/building",
+              "development/translations",
+              "development/porting"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "development/architecture",
+              "development/bsp",
+              "development/pid-control"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Resources",
+            "pages": [
+              "reference/changelog",
+              "reference/faq",
+              "reference/glossary"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "PID temperature control for precise soldering",
+    "USB-PD and QC power negotiation support",
+    "31 language translations with multi-language builds",
+    "Motion detection with configurable sensitivity",
+    "Automatic sleep and shutdown modes",
+    "Boost mode for temporary temperature increase",
+    "Custom boot logo and animation support",
+    "Bluetooth LE control (Pinecil V2)",
+    "Profile mode for complex heating/cooling sequences",
+    "Battery protection with voltage cutoff",
+    "Hall effect sensor sleep mode (Pinecil)",
+    "Extensive on-device settings menu"
+  ],
+  "publicApiSurface": [
+    "Settings: Power source configuration",
+    "Settings: Temperature control (boost, sleep, shutdown)",
+    "Settings: Motion sensitivity (1-9 scale)",
+    "Settings: Display options (orientation, brightness, units)",
+    "Settings: USB-PD/QC negotiation parameters",
+    "Settings: Profile mode phases (up to 5 phases)",
+    "Settings: Power pulse for power bank keep-alive",
+    "Settings: Hall sensor sensitivity (Pinecil)",
+    "Settings: Bluetooth enable/disable (Pinecil V2)",
+    "Settings: Button lock and swap configurations",
+    "Controls: Front button (+/A) for heating and temperature up",
+    "Controls: Back button (-/B) for menu and temperature down",
+    "Controls: Long press front button for boost mode",
+    "Controls: Long press back button for standby/debug menu",
+    "Flashing: DFU mode bootloader for firmware updates",
+    "Build system: Multi-language firmware builds",
+    "Build system: Per-device model compilation (TS100, TS80P, Pinecil, MHP30, etc.)"
+  ]
+}
